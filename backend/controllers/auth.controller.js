@@ -3,13 +3,15 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendWelcomeEmail } from "../emails/emailHandlers.js";
 
+
 export const signup = async (req, res) => {
 	try {
-		const { name, username, email, password } = req.body;
+		const { name, username, email, password, role } = req.body; // Added role field
 
-		if (!name || !username || !email || !password) {
+		if (!name || !username || !email || !password || !role) { // Check if role is also provided
 			return res.status(400).json({ message: "All fields are required" });
 		}
+
 		const existingEmail = await User.findOne({ email });
 		if (existingEmail) {
 			return res.status(400).json({ message: "Email already exists" });
@@ -32,16 +34,17 @@ export const signup = async (req, res) => {
 			email,
 			password: hashedPassword,
 			username,
+			role, // Added role to the user creation
 		});
 
 		await user.save();
 
-		const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" });
+		const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "3d" });
 
 		res.cookie("jwt-linkedin", token, {
 			httpOnly: true, // prevent XSS attack
 			maxAge: 3 * 24 * 60 * 60 * 1000,
-			sameSite: "strict", // prevent CSRF attacks,
+			sameSite: "strict", // prevent CSRF attacks
 			secure: process.env.NODE_ENV === "production", // prevents man-in-the-middle attacks
 		});
 
@@ -77,7 +80,7 @@ export const login = async (req, res) => {
 		}
 
 		// Create and send token
-		const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" });
+		const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "3d" }); // Include role in token
 		await res.cookie("jwt-linkedin", token, {
 			httpOnly: true,
 			maxAge: 3 * 24 * 60 * 60 * 1000,
@@ -85,7 +88,7 @@ export const login = async (req, res) => {
 			secure: process.env.NODE_ENV === "production",
 		});
 
-		res.json({ message: "Logged in successfully" });
+		res.json({ message: "Logged in successfully", role: user.role }); // Include role in response
 	} catch (error) {
 		console.error("Error in login controller:", error);
 		res.status(500).json({ message: "Server error" });
@@ -99,9 +102,11 @@ export const logout = (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
 	try {
-		res.json(req.user);
+	   
+	   res.json(req.user);
 	} catch (error) {
-		console.error("Error in getCurrentUser controller:", error);
-		res.status(500).json({ message: "Server error" });
+	   console.error("Error in getCurrentUser controller:", error.message);
+	   res.status(500).json({ message: "Server error" });
 	}
-};
+ };
+ 

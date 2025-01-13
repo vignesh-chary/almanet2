@@ -6,9 +6,25 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		username: { type: String, required: true, unique: true },
-		email: { type: String, required: true, unique: true },
-		password: { type: String, required: true },
+		username: { 
+			type: String, 
+			required: true, 
+			unique: true 
+		},
+		email: { 
+			type: String, 
+			required: true, 
+			unique: true 
+		},
+		password: { 
+			type: String, 
+			required: true 
+		},
+		role: {
+			type: String,
+			enum: ["student", "alumni"],
+			default: "student",
+		},
 		profilePicture: {
 			type: String,
 			default: "",
@@ -19,7 +35,7 @@ const userSchema = new mongoose.Schema(
 		},
 		headline: {
 			type: String,
-			default: "Linkedin User",
+			default: "Almanet User",
 		},
 		location: {
 			type: String,
@@ -51,6 +67,66 @@ const userSchema = new mongoose.Schema(
 			{
 				type: mongoose.Schema.Types.ObjectId,
 				ref: "User",
+			},
+		],
+		// Alumni-specific fields
+		designation: {
+			type: String,
+			default: "",
+		},
+		company: {
+			type: String,
+			default: "",
+		},
+		industry: {
+			type: String,
+			default: "",
+		},
+		mentorshipAreas: [String],
+		// Student-specific fields
+		degree: {
+			type: String,
+			default: "",
+		},
+		yearOfStudy: {
+			type: Number,
+			default: null,
+		},
+		interests: [String],
+		mentorshipRequests: [
+			{
+				alumniId: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: "User",
+				},
+				requestDate: {
+					type: Date,
+					default: Date.now,
+				},
+				status: {
+					type: String,
+					enum: ["pending", "approved", "rejected"],
+					default: "pending",
+				},
+			},
+		],
+		recommendations: [
+			{
+				fromUser: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: "User",
+				},
+				message: String,
+			},
+		],
+		interactions: [
+			{
+				interactionType: String,
+				details: String,
+				date: {
+					type: Date,
+					default: Date.now,
+				},
 			},
 		],
 	},
