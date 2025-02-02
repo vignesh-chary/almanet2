@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import Event from "../models/event.model.js";
 
 export const getSuggestedConnections = async (req, res) => {
 	try {

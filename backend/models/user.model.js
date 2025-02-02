@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
 		},
 		role: {
 			type: String,
-			enum: ["student", "alumni"],
+			enum: ["student", "alumni", "admin"], // Added "admin"
 			default: "student",
 		},
 		profilePicture: {
@@ -129,6 +129,25 @@ const userSchema = new mongoose.Schema(
 				},
 			},
 		],
+		// Admin-specific fields
+		adminActions: [
+			{
+				actionType: String, // Example: "banUser", "approvePost"
+				targetUser: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: "User",
+				},
+				details: String,
+				date: {
+					type: Date,
+					default: Date.now,
+				},
+			},
+		],
+		isSuperAdmin: {
+			type: Boolean, // Flag for super-admin privileges
+			default: false,
+		},
 	},
 	{ timestamps: true }
 );

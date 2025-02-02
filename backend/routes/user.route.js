@@ -9,4 +9,6 @@ router.get("/:username", protectRoute, getPublicProfile);
 
 router.put("/profile", protectRoute, updateProfile);
 
+
+
 export default router;

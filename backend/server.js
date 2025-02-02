@@ -11,6 +11,9 @@ import notificationRoutes from "./routes/notification.route.js";
 import connectionRoutes from "./routes/connection.route.js";
 
 import { connectDB } from "./lib/db.js";
+import adminRoutes from "./routes/admin.routes.js";
+import eventRoutes from "./routes/event.route.js";
+import jobRoutes from "./routes/job.route.js";
 
 dotenv.config();
 
@@ -35,6 +38,9 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/connections", connectionRoutes);
+app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/events", eventRoutes);
+app.use("/api/v1/jobs", jobRoutes); // Corrected route path
 
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "/frontend/dist")));

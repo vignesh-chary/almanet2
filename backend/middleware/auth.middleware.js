@@ -3,6 +3,8 @@ import User from "../models/user.model.js";
 
 export const protectRoute = async (req, res, next) => {
 	try {
+		// console.log("in protectRoute middleware");
+
 		const token = req.cookies["jwt-linkedin"];
 		
 
@@ -24,7 +26,7 @@ export const protectRoute = async (req, res, next) => {
 		}
 
 		req.user = user;
-
+		// console.log("protectroute success");
 		next();
 	} catch (error) {
 		console.log("Error in protectRoute middleware:", error.message);
