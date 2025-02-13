@@ -1,0 +1,337 @@
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+
+    <title>Galileo Design</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  </head>
+  <body>
+    <div
+      class="relative flex size-full min-h-screen flex-col bg-[#f8f9fc] group/design-root overflow-x-hidden"
+      style="--radio-dot-svg: url('data:image/svg+xml,%3csvg viewBox=%270 0 16 16%27 fill=%27rgb(28,110,242)%27 xmlns=%27http://www.w3.org/2000/svg%27%3e%3ccircle cx=%278%27 cy=%278%27 r=%273%27/%3e%3c/svg%3e'); font-family: Inter, &quot;Noto Sans&quot;, sans-serif;"
+    >
+      <div class="layout-container flex h-full grow flex-col">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e7ecf4] px-10 py-3">
+          <div class="flex items-center gap-8">
+            <div class="flex items-center gap-4 text-[#0d131c]">
+              <div class="size-4">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path></svg>
+              </div>
+              <h2 class="text-[#0d131c] text-lg font-bold leading-tight tracking-[-0.015em]">Almanet</h2>
+            </div>
+            <div class="flex items-center gap-9">
+              <a class="text-[#0d131c] text-sm font-medium leading-normal" href="#">Browse</a>
+              <a class="text-[#0d131c] text-sm font-medium leading-normal" href="#">For you</a>
+              <a class="text-[#0d131c] text-sm font-medium leading-normal" href="#">Requests</a>
+            </div>
+          </div>
+          <div class="flex flex-1 justify-end gap-8">
+            <label class="flex flex-col min-w-40 !h-10 max-w-64">
+              <div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+                <div
+                  class="text-[#49699c] flex border-none bg-[#e7ecf4] items-center justify-center pl-4 rounded-l-xl border-r-0"
+                  data-icon="MagnifyingGlass"
+                  data-size="24px"
+                  data-weight="regular"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+                    ></path>
+                  </svg>
+                </div>
+                <input
+                  placeholder="Search"
+                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0d131c] focus:outline-0 focus:ring-0 border-none bg-[#e7ecf4] focus:border-none h-full placeholder:text-[#49699c] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                  value=""
+                />
+              </div>
+            </label>
+            <button
+              class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#1c6ef2] text-[#f8f9fc] text-sm font-bold leading-normal tracking-[0.015em]"
+            >
+              <span class="truncate">New request</span>
+            </button>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+              style='background-image: url("https://cdn.usegalileo.ai/sdxl10/2e58a568-aa50-44e4-9391-dbb85b43a4dc.png");'
+            ></div>
+          </div>
+        </header>
+        <div class="gap-1 px-6 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col w-80">
+            <h2 class="text-[#0d131c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Category of Expertise</h2>
+            <div class="flex flex-col gap-3 p-4">
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="7aac4fba-a8d8-4665-aac1-41ef67f6842c"
+                  checked=""
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Career Development</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="7aac4fba-a8d8-4665-aac1-41ef67f6842c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Product Management</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="7aac4fba-a8d8-4665-aac1-41ef67f6842c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Software Engineering</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="7aac4fba-a8d8-4665-aac1-41ef67f6842c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">UX/UI Design</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="7aac4fba-a8d8-4665-aac1-41ef67f6842c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Data Science</p></div>
+              </label>
+            </div>
+            <h2 class="text-[#0d131c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Industry</h2>
+            <div class="flex flex-col gap-3 p-4">
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="8f2aede1-e01c-4bb5-868d-fbb2e9dfdaa2"
+                  checked=""
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Technology</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="8f2aede1-e01c-4bb5-868d-fbb2e9dfdaa2"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Finance</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="8f2aede1-e01c-4bb5-868d-fbb2e9dfdaa2"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Healthcare</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="8f2aede1-e01c-4bb5-868d-fbb2e9dfdaa2"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Education</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="8f2aede1-e01c-4bb5-868d-fbb2e9dfdaa2"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Retail</p></div>
+              </label>
+            </div>
+            <h2 class="text-[#0d131c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Location</h2>
+            <div class="flex flex-col gap-3 p-4">
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="35d727fd-f675-4bc7-a6f0-d73f81683688"
+                  checked=""
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">San Francisco</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="35d727fd-f675-4bc7-a6f0-d73f81683688"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">New York</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="35d727fd-f675-4bc7-a6f0-d73f81683688"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Los Angeles</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="35d727fd-f675-4bc7-a6f0-d73f81683688"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">London</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="35d727fd-f675-4bc7-a6f0-d73f81683688"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Berlin</p></div>
+              </label>
+            </div>
+            <h2 class="text-[#0d131c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Availabilty</h2>
+            <div class="flex flex-col gap-3 p-4">
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="e3bb7e43-3e30-4ce8-82d6-115e6217fe8c"
+                  checked=""
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Now</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="e3bb7e43-3e30-4ce8-82d6-115e6217fe8c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Today</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="e3bb7e43-3e30-4ce8-82d6-115e6217fe8c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">This week</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="e3bb7e43-3e30-4ce8-82d6-115e6217fe8c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">This month</p></div>
+              </label>
+              <label class="flex items-center gap-4 rounded-xl border border-solid border-[#ced8e8] p-[15px]">
+                <input
+                  type="radio"
+                  class="h-5 w-5 border-2 border-[#ced8e8] bg-transparent text-transparent checked:border-[#1c6ef2] checked:bg-[image:--radio-dot-svg] focus:outline-none focus:ring-0 focus:ring-offset-0 checked:focus:border-[#1c6ef2]"
+                  name="e3bb7e43-3e30-4ce8-82d6-115e6217fe8c"
+                />
+                <div class="flex grow flex-col"><p class="text-[#0d131c] text-sm font-medium leading-normal">Flexible</p></div>
+              </label>
+            </div>
+          </div>
+          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <div class="flex flex-wrap justify-between gap-3 p-4">
+              <div class="flex min-w-72 flex-col gap-3">
+                <p class="text-[#0d131c] tracking-light text-[32px] font-bold leading-tight">Find a mentor</p>
+                <p class="text-[#49699c] text-sm font-normal leading-normal">1,000 mentors available</p>
+              </div>
+            </div>
+            <div class="px-4 py-3">
+              <label class="flex flex-col min-w-40 h-12 w-full">
+                <div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+                  <div
+                    class="text-[#49699c] flex border-none bg-[#e7ecf4] items-center justify-center pl-4 rounded-l-xl border-r-0"
+                    data-icon="MagnifyingGlass"
+                    data-size="24px"
+                    data-weight="regular"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                      <path
+                        d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <input
+                    placeholder="Search mentors..."
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0d131c] focus:outline-0 focus:ring-0 border-none bg-[#e7ecf4] focus:border-none h-full placeholder:text-[#49699c] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                    value=""
+                  />
+                </div>
+              </label>
+            </div>
+            <div class="flex gap-3 p-3 flex-wrap pr-4">
+              <div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#e7ecf4] pl-4 pr-4">
+                <p class="text-[#0d131c] text-sm font-medium leading-normal">Leadership</p>
+              </div>
+              <div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#e7ecf4] pl-4 pr-4">
+                <p class="text-[#0d131c] text-sm font-medium leading-normal">Product Management</p>
+              </div>
+              <div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#e7ecf4] pl-4 pr-4">
+                <p class="text-[#0d131c] text-sm font-medium leading-normal">UX/UI Design</p>
+              </div>
+              <div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#e7ecf4] pl-4 pr-4">
+                <p class="text-[#0d131c] text-sm font-medium leading-normal">Data Science</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 bg-[#f8f9fc] px-4 min-h-[72px] py-2">
+              <div
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-fit"
+                style='background-image: url("https://cdn.usegalileo.ai/sdxl10/a245309c-1e3c-4d2e-ab37-e62e455b4346.png");'
+              ></div>
+              <div class="flex flex-col justify-center">
+                <p class="text-[#0d131c] text-base font-medium leading-normal line-clamp-1">Samantha Lee</p>
+                <p class="text-[#49699c] text-sm font-normal leading-normal line-clamp-2">Senior Product Designer at Meta</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 bg-[#f8f9fc] px-4 min-h-[72px] py-2">
+              <div
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-fit"
+                style='background-image: url("https://cdn.usegalileo.ai/sdxl10/05542044-61b8-4614-82fe-38bfc3cbc4b3.png");'
+              ></div>
+              <div class="flex flex-col justify-center">
+                <p class="text-[#0d131c] text-base font-medium leading-normal line-clamp-1">Alex Kim</p>
+                <p class="text-[#49699c] text-sm font-normal leading-normal line-clamp-2">Product Designer at Stripe</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 bg-[#f8f9fc] px-4 min-h-[72px] py-2">
+              <div
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-fit"
+                style='background-image: url("https://cdn.usegalileo.ai/sdxl10/7171a5ac-675c-403d-b7fc-e77f1fb96036.png");'
+              ></div>
+              <div class="flex flex-col justify-center">
+                <p class="text-[#0d131c] text-base font-medium leading-normal line-clamp-1">Michelle Wu</p>
+                <p class="text-[#49699c] text-sm font-normal leading-normal line-clamp-2">Product Designer at Airbnb</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 bg-[#f8f9fc] px-4 min-h-[72px] py-2">
+              <div
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-fit"
+                style='background-image: url("https://cdn.usegalileo.ai/sdxl10/c4795afa-3061-43eb-b832-c7b41d046975.png");'
+              ></div>
+              <div class="flex flex-col justify-center">
+                <p class="text-[#0d131c] text-base font-medium leading-normal line-clamp-1">Chris Wong</p>
+                <p class="text-[#49699c] text-sm font-normal leading-normal line-clamp-2">Product Designer at Google</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

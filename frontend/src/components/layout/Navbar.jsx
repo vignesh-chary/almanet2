@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "../../lib/axios";
 import { Link } from "react-router-dom";
-import { Bell, Home, LogOut, User, Users,Lock } from "lucide-react";
+import { Bell, Home, LogOut, User, Users, Lock, BookOpen } from "lucide-react"; // Added BookOpen icon for mentorship
 
 const Navbar = () => {
   const { data: authUser } = useQuery({ queryKey: ["authUser"] });
@@ -57,6 +57,16 @@ const Navbar = () => {
                     </span>
                   )}
                 </Link>
+
+                {/* Mentorship Button */}
+                <Link
+                  to={authUser.role === "alumni" ? "/alumni-mentorship-home" : "/student-mentorship-home"}
+                  className='text-neutral flex flex-col items-center'
+                >
+                  <BookOpen size={20} /> {/* Use BookOpen icon for mentorship */}
+                  <span className='text-xs hidden md:block'>Mentorship</span>
+                </Link>
+
                 <Link to='/notifications' className='text-neutral flex flex-col items-center relative'>
                   <Bell size={20} />
                   <span className='text-xs hidden md:block'>Notifications</span>
@@ -73,15 +83,13 @@ const Navbar = () => {
                   <User size={20} />
                   <span className='text-xs hidden md:block'>Me</span>
                 </Link>
-                {authUser.role === "admin" && ( 
+                {authUser.role === "admin" && (
                   <Link
-                    to='/admin' 
+                    to='/admin'
                     className='bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 rounded-md font-medium
                     transition duration-300 ease-in-out flex items-center'
                   >
-                    {/* Assuming you have a component named Lock */}
-                    {/* If it's a custom component, ensure it's imported and defined correctly */}
-                    <Lock className='inline-block mr-1' size={18} /> 
+                    <Lock className='inline-block mr-1' size={18} />
                     <span className='hidden sm:inline'>Dashboard</span>
                   </Link>
                 )}

@@ -14,6 +14,7 @@ import { connectDB } from "./lib/db.js";
 import adminRoutes from "./routes/admin.routes.js";
 import eventRoutes from "./routes/event.route.js";
 import jobRoutes from "./routes/job.route.js";
+import mentorshipRoutes from "./routes/mentorship.route.js";
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use("/api/v1/connections", connectionRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/jobs", jobRoutes); // Corrected route path
+app.use("/api/v1/mentorships", mentorshipRoutes);
 
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "/frontend/dist")));

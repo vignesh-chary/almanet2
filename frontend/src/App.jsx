@@ -32,6 +32,21 @@ import CreateJob from "./components/jobs/CreateJob";
 import EditJob from "./components/jobs/EditJob";  // Added EditJob Component
 import JobDashboard from "./components/jobs/JobDashboard";
 import MyAppliedJobs from "./components/jobs/MyAppliedJobs";
+import MentorshipRequestsPage from "./pages/mentorshippages/MentorshipRequestsPage";
+import MentorRegister from "./components/mentorship/MentorRegister";
+import AlumniMentorshipHome from "./pages/mentorshippages/AlumniMentorshipHome";
+import MentorshipDashboard from "./pages/mentorshippages/MentorshipDashboard";
+
+
+
+import StudentMentorshipHome from "./pages/mentorshippages/StudentMentorshipHome";
+import FindMentor from "./pages/mentorshippages/FindMentor";
+
+import MyMentors from "./components/mentorship/MyMentors.jsx";
+
+import GoalsPage from "./components/mentorship/Goals";
+import Schedule from "./components/mentorship/Schedule";
+
 function App() {
   const { data: authUser, isLoading } = useQuery({
     queryKey: ["authUser"],
@@ -139,7 +154,17 @@ function App() {
             authUser ? <MyAppliedJobs /> : <Navigate to="/login" />
           } // My Applied Jobs Route
         />
+      <Route path="alumni-mentorship-home" element={authUser?.role === "alumni" ? <AlumniMentorshipHome /> : <Navigate to="/login" />}  />
+      <Route path="student-mentorship-home" element={authUser?.role === "student" ? <StudentMentorshipHome /> : <Navigate to="/login" />}  />
+      <Route path="/mentorship-requests" element={authUser?.role === "alumni" ? <MentorshipRequestsPage /> : <Navigate to="/login" />}  />
+      <Route path="/mentor/register" element={authUser?.role == "alumni" ? <MentorRegister /> : <Navigate to="/login"  />} />
+      <Route path="/mentorship-dashboard" element={authUser ? <MentorshipDashboard /> : <Navigate to="/login"  />} />
+      <Route path="/find-mentor"  element ={authUser?.role === "student" ? <FindMentor /> : <Navigate to="/login"/>} />
+      <Route path="/my-mentors" element={authUser?.role === "student" ? <MyMentors /> : <Navigate to="/login"/>} />
+      <Route path="/mentorships/:mentorshipId/goals" element={authUser ? <GoalsPage /> : <Navigate to="/login"/>} />  {/* Corrected Route */}
+      <Route path="/schedule" element={authUser? <Schedule /> : <Navigate to="/login"/>} />
       </Routes>
+
       <Toaster />
     </Layout>
   );
