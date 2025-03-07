@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema(
 		designation: { type: String, default: "" },
 		company: { type: String, default: "" },
 		industry: { type: String, default: "" },
-		mentorshipAreas: [String], // Keep this for alumni to specify their expertise
+		mentorshipAreas: [String], // Alumni expertise
 		// Student-specific fields
 		degree: { type: String, default: "" },
 		yearOfStudy: { type: Number, default: null },
@@ -66,6 +66,9 @@ const userSchema = new mongoose.Schema(
 	},
 	{ timestamps: true }
 );
+
+// **Add a text index for optimized searching**
+// userSchema.index({ name: "text", username: "text" });
 
 const User = mongoose.model("User", userSchema);
 

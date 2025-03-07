@@ -5,7 +5,8 @@ import {
   getMentorshipRequests,
   updateMentorshipStatus,
   getMentors,getMentorStatus,getMenteeCount,getRequestCount,getMentorshipRequestStatus,getAcceptedMentors,getGoals,addGoal,deleteGoal,getmentorshipId,
-  addSubgoal,toggleSubgoal,deleteSubGoal
+  addSubgoal,toggleSubgoal,deleteSubGoal,getUserRoleAndData,markGoalAsCompleted,markSubgoalAsCompleted,getGoalProgress,getMentorMentees,
+  findMentorIdByUserId,getMentorAvailability, scheduleMeeting, getMyMeetings
   // updateRequestStatus
 } from "../controllers/mentorship.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
@@ -13,9 +14,18 @@ import { alumniRoute } from "../middleware/alumni.middleware.js";
 
 const router = express.Router();
 
-router.post("/request-status", protectRoute, getMentorshipRequestStatus);
+
 
 router.get("/mentors", protectRoute,getMentors);
+router.get('/find/:userId', findMentorIdByUserId);
+
+
+// Get mentees of a mentor
+router.get("/mentees", protectRoute, getMentorMentees);
+
+router.post("/request-status", protectRoute, getMentorshipRequestStatus);
+
+
 router.get("/mentor-status", protectRoute,getMentorStatus);
 
 
@@ -51,6 +61,20 @@ router.delete("/:mentorshipId/goals/:goalId", protectRoute, deleteGoal);
 // router.delete("/goals/:goalId", protectRoute, deleteGoal);
 // router.get('/mentor/:mentorId', protectRoute, getmentorshipId);
 router.get('/find', protectRoute, getmentorshipId);
+
+router.get("/user-role", protectRoute, getUserRoleAndData);
+
+router.put("/goals/:goalId/complete", protectRoute, markGoalAsCompleted);
+router.put("/goals/:goalId/subgoals/:subgoalId/complete", protectRoute, markSubgoalAsCompleted);
+router.get("/goals/:goalId/progress", protectRoute, getGoalProgress);
+
+
+
+
+router.get("/mentor/:mentorId/availability",protectRoute, getMentorAvailability);
+router.post("/schedule", protectRoute,scheduleMeeting);
+router.get("/meetings/:userId", protectRoute, getMyMeetings);
+
 
 
 export default router;

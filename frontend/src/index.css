@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.available-date {
+    background-color: #e0f7fa; /* Light blue background */
+    border-radius: 50%;
+}

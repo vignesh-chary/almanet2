@@ -65,7 +65,7 @@ export default function Sidebar({ user }) {
                 <Briefcase className="mr-2" size={20} /> Jobs
               </Link>
             </li>
-
+            
             {/* Only show Manage Job Posts if the user is alumni */}
             {user.role === "alumni" && (
               <li>
@@ -77,6 +77,16 @@ export default function Sidebar({ user }) {
                 </Link>
               </li>
             )}
+            
+            {/* My Meetings Page Link */}
+            <li>
+              <Link
+                to="/meetings"
+                className="flex items-center py-2 px-4 rounded-md hover:bg-primary hover:text-white transition-colors"
+              >
+                <Calendar className="mr-2" size={20} /> My Meetings
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>

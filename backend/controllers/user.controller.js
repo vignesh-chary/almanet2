@@ -4,6 +4,7 @@ import Event from "../models/event.model.js";
 
 export const getSuggestedConnections = async (req, res) => {
 	try {
+		
 		const currentUser = await User.findById(req.user._id).select("connections");
 
 		// find users who are not already connected, and also do not recommend our own profile!! right?
@@ -81,3 +82,32 @@ export const updateProfile = async (req, res) => {
 		res.status(500).json({ message: "Server error" });
 	}
 };
+
+
+
+
+
+export const searchUsers = async (req, res) => {
+	console.log("hello");
+	try {
+		
+	  const { query } = req.query;
+  
+	  if (!query) return res.status(400).json({ message: "Query is required" });
+	 
+	  const users = await User.find({
+		$or: [
+		//   { name: { $regex: query, $options: "i" } },
+		  { username: { $regex: query, $options: "i" } },
+		],
+	  }).limit(10).select("username profilePicture headline");
+  
+	  
+	  res.json(users);
+	} catch (error) {
+		console.error("Error in searchUsers:", error); // Crucial for debugging
+        
+
+	  res.status(500).json({ message: "Server error" });
+	}
+  };

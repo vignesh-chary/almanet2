@@ -35,7 +35,7 @@ import MyAppliedJobs from "./components/jobs/MyAppliedJobs";
 import MentorshipRequestsPage from "./pages/mentorshippages/MentorshipRequestsPage";
 import MentorRegister from "./components/mentorship/MentorRegister";
 import AlumniMentorshipHome from "./pages/mentorshippages/AlumniMentorshipHome";
-import MentorshipDashboard from "./pages/mentorshippages/MentorshipDashboard";
+
 
 
 
@@ -47,6 +47,13 @@ import MyMentors from "./components/mentorship/MyMentors.jsx";
 import GoalsPage from "./components/mentorship/Goals";
 import Schedule from "./components/mentorship/Schedule";
 
+import SearchResults from "./pages/SearchResults.jsx";
+
+import ChatBox from "./components/ChatBox"; // Import ChatBox Component
+import MentorDashboard from "./pages/mentorshippages/MentorDashboard.jsx";
+
+import ScheduleMeetingPage from "./components/mentorship/Schedule";
+import MyMeetingsPage from "./components/mentorship/MyMeetings";
 function App() {
   const { data: authUser, isLoading } = useQuery({
     queryKey: ["authUser"],
@@ -158,16 +165,28 @@ function App() {
       <Route path="student-mentorship-home" element={authUser?.role === "student" ? <StudentMentorshipHome /> : <Navigate to="/login" />}  />
       <Route path="/mentorship-requests" element={authUser?.role === "alumni" ? <MentorshipRequestsPage /> : <Navigate to="/login" />}  />
       <Route path="/mentor/register" element={authUser?.role == "alumni" ? <MentorRegister /> : <Navigate to="/login"  />} />
-      <Route path="/mentorship-dashboard" element={authUser ? <MentorshipDashboard /> : <Navigate to="/login"  />} />
+     
       <Route path="/find-mentor"  element ={authUser?.role === "student" ? <FindMentor /> : <Navigate to="/login"/>} />
       <Route path="/my-mentors" element={authUser?.role === "student" ? <MyMentors /> : <Navigate to="/login"/>} />
       <Route path="/mentorships/:mentorshipId/goals" element={authUser ? <GoalsPage /> : <Navigate to="/login"/>} />  {/* Corrected Route */}
-      <Route path="/schedule" element={authUser? <Schedule /> : <Navigate to="/login"/>} />
+      {/* <Route path="/schedule" element={authUser? <ScheduleMeetingPage /> : <Navigate to="/login"/>} /> */}
+      <Route path="/search" element={authUser?<SearchResults /> : <Navigate to="/login"/>} />
+      <Route path='/mentorship-dashboard' element={authUser?.role === "alumni" ? <MentorDashboard /> : <Navigate to="/login" />} />
+
+
+        <Route path="/schedule/:mentorId" element={authUser?<ScheduleMeetingPage />:<Navigate to="/login" />} />
+        <Route path="/meetings" element={authUser ?<MyMeetingsPage />:<Navigate to="/login" />} />
       </Routes>
 
+          {/* ChatBox Component */}
+      {authUser && <ChatBox />}
       <Toaster />
     </Layout>
   );
 }
 
+function MentorshipDashboardWrapper() {
+  const { mentorshipId } = useParams();
+  return <MentorshipDashboard mentorshipId={mentorshipId} />;
+}
 export default App;

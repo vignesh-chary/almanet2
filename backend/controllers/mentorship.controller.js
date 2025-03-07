@@ -4,7 +4,7 @@ import Mentee from "../models/mentee.model.js";
 import User from "../models/user.model.js"; // Adjust the path based on your folder structure
 import Goal from "../models/goal.model.js";
 
-
+import Meeting from "../models/Meeting.model.js";
 /**
  * Mentee requests mentorship from a mentor
  */
@@ -233,31 +233,60 @@ export const updateMentorshipStatus = async (req, res) => {
 
 export const getMentors = async (req, res) => {
   try {
-    const { expertise, industry, availability, searchQuery } = req.query;
+    const { searchQuery } = req.query;
     let filter = {};
-
-    if (expertise) filter.expertise = { $regex: expertise, $options: "i" };
-    if (industry) filter.industry = industry;
-    if (availability) filter["availability.day"] = availability; // Matches availability
 
     // Search Query (Name or Expertise)
     if (searchQuery) {
       filter.$or = [
         { name: { $regex: searchQuery, $options: "i" } },
-        { expertise: { $regex: searchQuery, $options: "i" } }
+        { expertise: { $regex: searchQuery, $options: "i" } },
       ];
     }
 
+    // Fetch mentors with filters
     const mentors = await Mentor.find(filter)
-      .populate("userId", "name email username profilePicture") // Fetch profile picture
+      .populate("userId", "name email username profilePicture") // Populate user details
       .select("userId expertise industry linkedin availability");
 
-    res.json(mentors);
+    res.status(200).json(mentors);
   } catch (error) {
     console.error("Error fetching mentors:", error);
     res.status(500).json({ message: "Error fetching mentors" });
   }
 };
+
+// export const getMentors = async (req, res) => {
+//   try {
+//     const { expertise, industry, availability, searchQuery } = req.query;
+//     let filter = {};
+
+//     // Add filters based on query parameters
+//     if (expertise) filter.expertise = { $regex: expertise, $options: "i" };
+//     if (industry) filter.industry = { $regex: industry, $options: "i" };
+//     if (availability) filter["availability.day"] = { $regex: availability, $options: "i" };
+
+//     // Search Query (Name or Expertise)
+//     if (searchQuery) {
+//       filter.$or = [
+//         { name: { $regex: searchQuery, $options: "i" } },
+//         { expertise: { $regex: searchQuery, $options: "i" } },
+//       ];
+//     }
+
+//     // Fetch mentors with filters
+//     const mentors = await Mentor.find(filter)
+//       .populate("userId", "name email username profilePicture") // Populate user details
+//       .select("userId expertise industry linkedin availability");
+
+//     res.status(200).json(mentors);
+//   } catch (error) {
+//     console.error("Error fetching mentors:", error);
+//     res.status(500).json({ message: "Error fetching mentors" });
+//   }
+// };
+
+
 
 
 /**
@@ -606,3 +635,333 @@ export const getmentorshipId = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
 }
 };
+
+
+export const getUserRoleAndData = async (req, res) => {
+  try {
+    const userId = req.user._id; // Authenticated user ID
+
+    // Check if the user is a mentor (alumni)
+    const mentor = await Mentor.findOne({ userId });
+    if (mentor) {
+      return res.status(200).json({ role: "mentor", data: mentor });
+    }
+
+    // Check if the user is a mentee (student)
+    const mentee = await Mentee.findOne({ userId });
+    if (mentee) {
+      return res.status(200).json({ role: "mentee", data: mentee });
+    }
+
+    // If neither, return an error
+    res.status(404).json({ message: "User role not found" });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user role", error: error.message });
+  }
+};
+
+
+//goals-completions
+export const markGoalAsCompleted = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+
+    // Mark the goal as completed and all its subgoals as completed
+    const goal = await Goal.findByIdAndUpdate(
+      goalId,
+      { $set: { completed: true, "subgoals.$[].completed": true } }, // Mark all subgoals as completed
+      { new: true }
+    );
+
+    if (!goal) {
+      return res.status(404).json({ message: "Goal not found" });
+    }
+
+    res.status(200).json(goal);
+  } catch (error) {
+    res.status(500).json({ message: "Error marking goal as completed", error: error.message });
+  }
+};
+
+export const markSubgoalAsCompleted = async (req, res) => {
+  try {
+    const { goalId, subgoalId } = req.params;
+
+    // Mark the subgoal as completed
+    const goal = await Goal.findOneAndUpdate(
+      { _id: goalId, "subgoals._id": subgoalId },
+      { $set: { "subgoals.$.completed": true } },
+      { new: true }
+    );
+
+    if (!goal) {
+      return res.status(404).json({ message: "Goal or subgoal not found" });
+    }
+
+    // Check if all subgoals are completed
+    const allSubgoalsCompleted = goal.subgoals.every((subgoal) => subgoal.completed);
+
+    // If all subgoals are completed, mark the goal as completed
+    if (allSubgoalsCompleted) {
+      const updatedGoal = await Goal.findByIdAndUpdate(
+        goalId,
+        { $set: { completed: true } },
+        { new: true }
+      );
+      return res.status(200).json(updatedGoal);
+    }
+
+    res.status(200).json(goal);
+  } catch (error) {
+    res.status(500).json({ message: "Error marking subgoal as completed", error: error.message });
+  }
+};
+
+export const getGoalProgress = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const goal = await Goal.findById(goalId);
+
+    if (!goal) {
+      return res.status(404).json({ message: "Goal not found" });
+    }
+
+    // Calculate progress
+    const totalSubgoals = goal.subgoals.length;
+    const completedSubgoals = goal.subgoals.filter((subgoal) => subgoal.completed).length;
+    const progress = totalSubgoals > 0 ? (completedSubgoals / totalSubgoals) * 100 : goal.completed ? 100 : 0;
+
+    res.status(200).json({ progress });
+  } catch (error) {
+    res.status(500).json({ message: "Error calculating goal progress", error: error.message });
+  }
+};
+
+
+export const getMentorMentees = async (req, res) => {
+  try {
+    const mentor = await Mentor.findOne({ userId: req.user.id });
+
+    if (!mentor) {
+      return res.status(404).json({ message: "Mentor profile not found" });
+    }
+
+    const mentees = await Mentorship.find({
+      mentor: mentor._id,
+      status: "accepted",
+    }).populate("mentee", "name email photoUrl");
+
+    res.json(mentees.map(m => m.mentee));
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+
+
+
+//new controller for something in mentorship dashboard
+
+export const findMentorIdByUserId = async (req, res) => {
+  try {
+      const { userId } = req.params;
+      const mentor = await Mentor.findOne({ userId: userId });
+
+      if (mentor) {
+          res.json({ mentorId: mentor._id });
+      } else {
+          res.status(404).json({ message: 'Mentor not found' });
+      }
+  } catch (error) {
+      console.error('Error finding mentor ID:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+
+
+
+
+export const getMentorAvailability = async (req, res) => {
+  try {
+    const { mentorId } = req.params;
+    const mentor = await Mentor.findById(mentorId);
+
+    if (!mentor) {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
+
+    res.json(mentor.availability);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+import moment from 'moment';
+
+
+// export const scheduleMeeting = async (req, res) => {
+//   try {
+//     const { mentorId, menteeId, date, startTime, endTime } = req.body;
+
+//     // Validate mentor existence
+//     const mentor = await Mentor.findById(mentorId);
+//     if (!mentor) return res.status(404).json({ message: "Mentor not found" });
+
+//     // Convert date to a weekday name to match stored availability
+//     const selectedDay = moment(date).format("dddd");
+
+//     console.log("📌 Schedule Request:", { mentorId, menteeId, date, startTime, endTime, selectedDay });
+//     console.log("🟢 Mentor's Availability:", mentor.availability);
+
+//     // Find an available slot
+//     const availableSlot = mentor.availability.find((slot) => {
+//       console.log(`Checking slot: ${slot.day} ${slot.startTime} - ${slot.endTime}`);
+
+//       return (
+//         slot.day === selectedDay &&
+//         slot.startTime === startTime &&
+//         slot.endTime === endTime
+//       );
+//     });
+
+//     if (!availableSlot) {
+//       return res.status(400).json({ message: "Selected time is not available" });
+//     }
+
+//     // Generate a meeting link
+//     const meetLink = `https://meet.example.com/${mentorId}-${menteeId}-${Date.now()}`;
+
+//     // Save meeting
+//     const newMeeting = new Meeting({ mentorId, menteeId, date, startTime, endTime, meetLink });
+//     await newMeeting.save();
+
+//     res.status(201).json({ message: "Meeting scheduled successfully", meetLink });
+//   } catch (error) {
+//     console.error("❌ Schedule Meeting Error:", error);
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
+
+import { google } from "googleapis";
+
+export const scheduleMeeting = async (req, res) => {
+  try {
+    const { mentorId, menteeId, date, startTime, endTime } = req.body;
+
+    // Validate mentor existence
+    const mentor = await Mentor.findById(mentorId);
+    if (!mentor) return res.status(404).json({ message: "Mentor not found" });
+
+    // Convert date to a weekday name to match stored availability
+    const selectedDay = moment(date).format("dddd");
+
+    console.log("📌 Schedule Request:", { mentorId, menteeId, date, startTime, endTime, selectedDay });
+    console.log("🟢 Mentor's Availability:", mentor.availability);
+
+    // Find an available slot
+    const availableSlot = mentor.availability.find((slot) => {
+      console.log(`Checking slot: ${slot.day} ${slot.startTime} - ${slot.endTime}`);
+
+      return (
+        slot.day === selectedDay &&
+        slot.startTime === startTime &&
+        slot.endTime === endTime
+      );
+    });
+
+    if (!availableSlot) {
+      return res.status(400).json({ message: "Selected time is not available" });
+    }
+
+    // Generate a Google Meet link
+    const meetLink = `https://meet.google.com/new?authuser=${mentor.email}`;
+
+    // Save meeting
+    const newMeeting = new Meeting({ mentorId, menteeId, date, startTime, endTime, meetLink });
+    await newMeeting.save();
+
+    res.status(201).json({ message: "Meeting scheduled successfully", meetLink });
+  } catch (error) {
+    console.error("❌ Schedule Meeting Error:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+
+
+
+export const getMyMeetings = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    console.log("Received User ID:", userId);
+
+    // Check if user is a mentor
+    const mentor = await Mentor.findOne({ userId: userObjectId });
+
+    let mentorObjectId = null;
+    if (mentor) {
+      mentorObjectId = mentor._id; // Mentor's actual ID used in the meetings model
+      console.log("Mapped Mentor ID:", mentorObjectId);
+    }
+
+    // Find meetings where the user is either a mentor or mentee
+    const queryConditions = [
+      { menteeId: userObjectId }, // Match menteeId directly
+    ];
+
+    if (mentorObjectId) {
+      queryConditions.push({ mentorId: mentorObjectId }); // Match mentorId correctly
+    }
+
+    const meetings = await Meeting.find({ $or: queryConditions })
+      .populate({
+        path: "mentorId",
+        select: "name username profilePicture industry",
+      })
+      .populate({
+        path: "menteeId",
+        select: "name username profilePicture industry",
+      });
+
+    console.log("Fetched Meetings:", meetings);
+
+    res.json(meetings);
+  } catch (error) {
+    console.error("Error fetching meetings:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// export const getMyMeetings = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     const meetings = await Meeting.find({
+//       $or: [{ mentorId: userId }, { menteeId: userId }],
+//     })
+//       .populate({
+//         path: "mentorId",
+//         select: "name username profilePicture industry",
+//       }) // Populate mentor details, including username
+//       .populate({
+//         path: "menteeId",
+//         select: "name username profilePicture industry",
+//       }); // Populate mentee details, including username
+
+//     res.json(meetings);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };

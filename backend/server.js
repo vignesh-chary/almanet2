@@ -15,10 +15,16 @@ import adminRoutes from "./routes/admin.routes.js";
 import eventRoutes from "./routes/event.route.js";
 import jobRoutes from "./routes/job.route.js";
 import mentorshipRoutes from "./routes/mentorship.route.js";
+import messageRoutes from "./routes/message.route.js";
+
+
+import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const app = express();
+// const app = express();
+
+
 const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
@@ -31,7 +37,8 @@ if (process.env.NODE_ENV !== "production") {
 	);
 }
 
-app.use(express.json({ limit: "5mb" })); // parse JSON request bodies
+// app.use(express.json({ limit: "5mb" })); // parse JSON request bodies
+app.use(express.json()); // parse JSON request bodies
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRoutes);
@@ -43,6 +50,7 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/jobs", jobRoutes); // Corrected route path
 app.use("/api/v1/mentorships", mentorshipRoutes);
+app.use("/api/v1/messages", messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "/frontend/dist")));
@@ -52,7 +60,13 @@ if (process.env.NODE_ENV === "production") {
 	});
 }
 
-app.listen(PORT, () => {
+// app.listen(PORT, () => {
+// 	console.log(`Server running on port ${PORT}`);
+// 	connectDB();
+// });
+
+
+server.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
 	connectDB();
 });

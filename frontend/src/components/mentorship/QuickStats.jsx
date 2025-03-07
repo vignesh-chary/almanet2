@@ -1,9 +1,12 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { axiosInstance } from "../../lib/axios";
 import { Users, Bell } from "lucide-react"; // Import icons for mentees and requests
 
 const QuickStats = () => {
+  const navigate = useNavigate(); // Initialize navigate
+
   // Fetch mentee count
   const {
     data: menteeCountData,
@@ -56,8 +59,11 @@ const QuickStats = () => {
           </p>
         </div>
 
-        {/* Requests Card */}
-        <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg text-center hover:shadow-lg transition-shadow duration-300">
+        {/* Requests Card (Clickable) */}
+        <div
+          onClick={() => navigate("/mentorship-requests")} // Navigate on click
+          className="cursor-pointer bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg text-center hover:shadow-lg transition-shadow duration-300 active:scale-95"
+        >
           <div className="flex justify-center items-center mb-4">
             <Bell className="text-purple-600" size={32} /> {/* Icon for requests */}
           </div>
