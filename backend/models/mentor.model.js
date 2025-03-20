@@ -9,7 +9,7 @@ const mentorSchema = new mongoose.Schema(
     industry: { type: String }, // Industry field of the mentor
     expertise: [{ type: String, required: true }], // List of expertise areas
     bio: { type: String, default: "No bio available" },
-    photoUrl: { type: String, default: "" }, // Profile picture URL
+    // photoUrl: { type: String, default: "" }, // Profile picture URL
 
     // Mentor's available slots (day, start time, end time)
     availability: [

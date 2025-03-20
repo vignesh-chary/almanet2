@@ -199,3 +199,47 @@ export const getConnectionStatus = async (req, res) => {
 		res.status(500).json({ message: "Server error" });
 	}
 };
+
+// import mongoose from "mongoose";
+
+
+// export const getConnectionStatus = async (req, res) => {
+//     try {
+//         const targetUserId = req.params.userId;
+//         const currentUserId = req.user._id;
+
+//         // Validate targetUserId
+//         if (!targetUserId || !mongoose.Types.ObjectId.isValid(targetUserId)) {
+//             return res.status(400).json({ message: "Invalid target user ID" });
+//         }
+
+//         // Check if the target user is already connected
+//         const currentUser = await User.findById(currentUserId).select("connections");
+//         if (currentUser.connections.includes(targetUserId)) {
+//             return res.json({ status: "connected" });
+//         }
+
+//         // Check for pending connection requests
+//         const pendingRequest = await ConnectionRequest.findOne({
+//             $or: [
+//                 { sender: currentUserId, recipient: targetUserId },
+//                 { sender: targetUserId, recipient: currentUserId },
+//             ],
+//             status: "pending",
+//         });
+
+//         if (pendingRequest) {
+//             if (pendingRequest.sender.toString() === currentUserId.toString()) {
+//                 return res.json({ status: "pending" });
+//             } else {
+//                 return res.json({ status: "received", requestId: pendingRequest._id });
+//             }
+//         }
+
+//         // If no connection or pending request is found
+//         res.json({ status: "not_connected" });
+//     } catch (error) {
+//         console.error("Error in getConnectionStatus controller:", error);
+//         res.status(500).json({ message: "Server error" });
+//     }
+// };

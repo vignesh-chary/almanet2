@@ -3,6 +3,8 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 import { getSuggestedConnections, getPublicProfile, updateProfile, searchUsers } from "../controllers/user.controller.js";
 
 const router = express.Router();
+
+// router.get("/recommendations", protectRoute, getRecommendations);
 router.get("/search", protectRoute,searchUsers);
 
 

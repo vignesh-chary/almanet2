@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Check, Clock, UserCheck, UserPlus, X } from "lucide-react";
 
 const RecommendedUser = ({ user }) => {
+    //  console.log("RecommendedUser user prop:", user);
 	const queryClient = useQueryClient();
 
 	const { data: connectionStatus, isLoading } = useQuery({

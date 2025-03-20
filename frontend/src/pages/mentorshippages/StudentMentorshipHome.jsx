@@ -1,23 +1,35 @@
+import { useNavigate } from "react-router-dom"; // Add this import
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '../../lib/axios.js';
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import MentorCard from '../../components/mentorship/MentorCard.jsx';
 import SectionHeader from '../../components/mentorship/SectionHeader.jsx';
 import ActionCard from '../../components/mentorship/ActionCard.jsx';
 import SearchBar from '../../components/mentorship/SearchBar.jsx';
 
 function StudentMentorshipHome() {
-  const navigate = useNavigate();
+  const { data: authUser } = useQuery({ queryKey: ["authUser"] });
+  const navigate = useNavigate(); // Use the useNavigate hook
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch mentors using React Query
-  const { data: mentors = [], isLoading, error } = useQuery({
-    queryKey: ['mentors'],
-    queryFn: async () => {
-      const response = await axiosInstance.get('/mentorships/mentors');
+  // Function to fetch recommended mentors
+  const getRecommendedMentors = async (userId) => {
+    try {
+      const response = await axiosInstance.get(`/recommendations/${userId}/recommended-mentors`);
       return response.data;
+    } catch (error) {
+      console.error("Error fetching recommended mentors:", error.response?.data || error.message);
+      throw new Error("Failed to fetch recommended mentors");
     }
+  };
+
+  // Fetch recommended mentors using React Query
+  const { data: recommendedMentors = [], isLoading, error } = useQuery({
+    queryKey: ['recommendedMentors'],
+    queryFn: async () => {
+      const userId = authUser._id; // Replace with actual user ID
+      return await getRecommendedMentors(userId);
+    },
   });
 
   // Handle search button click
@@ -62,13 +74,13 @@ function StudentMentorshipHome() {
 
         <div className="px-40 flex flex-1 justify-center py-5">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
-            {/* Featured Mentors Section */}
-            {mentors.length > 0 && (
+            {/* Recommended Mentors Section */}
+            {recommendedMentors.length > 0 && (
               <>
-                <SectionHeader text="Featured mentors" />
+                <SectionHeader text="Recommended mentors" />
                 <div className="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="flex items-stretch p-4 gap-8">
-                    <MentorCard mentors={mentors} />
+                    <MentorCard mentors={recommendedMentors} />
                   </div>
                 </div>
               </>

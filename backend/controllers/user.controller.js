@@ -111,3 +111,31 @@ export const searchUsers = async (req, res) => {
 	  res.status(500).json({ message: "Server error" });
 	}
   };
+
+
+
+//recommendations-system
+
+// import axios from "axios";
+
+// export const getRecommendations = async (req, res) => {
+//     try {
+//         const userId = req.user._id; // Extract from the protectRoute middleware
+//         const token = req.cookies["jwt-linkedin"]; // Get token from cookies
+
+//         if (!token) {
+//             return res.status(401).json({ message: "Unauthorized - No Token Found" });
+//         }
+
+//         // Send request to FastAPI with the token in headers
+//         const response = await axios.get(`http://127.0.0.1:8000/recommend/${userId}`, {
+//             headers: { Authorization: `Bearer ${token}` }  // Use Bearer token format
+//         });
+
+//         res.json(response.data);
+//     } catch (error) {
+//         console.error("Error fetching recommendations:", error?.response?.data || error.message);
+//         res.status(500).json({ message: "Error fetching recommendations", error });
+//     }
+// };
+

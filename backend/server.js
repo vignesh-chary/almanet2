@@ -16,7 +16,7 @@ import eventRoutes from "./routes/event.route.js";
 import jobRoutes from "./routes/job.route.js";
 import mentorshipRoutes from "./routes/mentorship.route.js";
 import messageRoutes from "./routes/message.route.js";
-
+import recommendationRoutes from "./routes/recommendation.route.js";
 
 import { app, server } from "./lib/socket.js";
 
@@ -51,6 +51,7 @@ app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/jobs", jobRoutes); // Corrected route path
 app.use("/api/v1/mentorships", mentorshipRoutes);
 app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/recommendations", recommendationRoutes);
 
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "/frontend/dist")));

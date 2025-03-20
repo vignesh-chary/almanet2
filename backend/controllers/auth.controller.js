@@ -64,6 +64,7 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
+	
 	try {
 		const { username, password } = req.body;
 
@@ -82,7 +83,7 @@ export const login = async (req, res) => {
 		// Create and send token
 		const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "3d" }); // Include role in token
 		await res.cookie("jwt-linkedin", token, {
-			httpOnly: true,
+			httpOnly: false,
 			maxAge: 3 * 24 * 60 * 60 * 1000,
 			sameSite: "strict",
 			secure: process.env.NODE_ENV === "production",
@@ -102,7 +103,7 @@ export const logout = (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
 	try {
-	   
+	//    console.log("Current user:", req.user);
 	   res.json(req.user);
 	} catch (error) {
 	   console.error("Error in getCurrentUser controller:", error.message);
