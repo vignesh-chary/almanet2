@@ -32,6 +32,15 @@ export const getPublicProfile = async (req, res) => {
 			return res.status(404).json({ message: "User not found" });
 		}
 
+		// Record profile view if the viewer is not the profile owner
+		if (req.user._id.toString() !== user._id.toString()) {
+			user.interactions.push({
+				interactionType: "PROFILE_VIEW",
+				details: `Viewed by ${req.user.username}`,
+			});
+			await user.save();
+		}
+
 		res.json(user);
 	} catch (error) {
 		console.error("Error in getPublicProfile controller:", error);
@@ -83,36 +92,155 @@ export const updateProfile = async (req, res) => {
 	}
 };
 
-
-
-
-
 export const searchUsers = async (req, res) => {
-	console.log("hello");
 	try {
-		
-	  const { query } = req.query;
-  
-	  if (!query) return res.status(400).json({ message: "Query is required" });
-	 
-	  const users = await User.find({
-		$or: [
-		//   { name: { $regex: query, $options: "i" } },
-		  { username: { $regex: query, $options: "i" } },
-		],
-	  }).limit(10).select("username profilePicture headline");
-  
-	  
-	  res.json(users);
+		const { query } = req.query;
+
+		if (!query) return res.status(400).json({ message: "Query is required" });
+
+		const users = await User.find({
+			$or: [
+				{ username: { $regex: query, $options: "i" } },
+			],
+		}).limit(10).select("username profilePicture headline");
+
+		// Record search appearances for each user found
+		for (const foundUser of users) {
+			if (foundUser._id.toString() !== req.user._id.toString()) {
+				if (!foundUser.interactions) {
+					foundUser.interactions = [];
+				}
+				foundUser.interactions.push({
+					interactionType: "SEARCH_APPEARANCE",
+					details: `Appeared in search: ${query}`,
+					timestamp: new Date()
+				});
+				await foundUser.save();
+			}
+		}
+
+		res.json(users);
 	} catch (error) {
-		console.error("Error in searchUsers:", error); // Crucial for debugging
-        
-
-	  res.status(500).json({ message: "Server error" });
+		console.error("Error in searchUsers:", error);
+		res.status(500).json({ message: "Server error" });
 	}
-  };
+};
 
+export const recordInteraction = async (req, res) => {
+    try {
+        const { targetUserId, interactionType, details } = req.body;
+        
+        if (!targetUserId || !interactionType) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
 
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) {
+            return res.status(404).json({ message: "Target user not found" });
+        }
+
+        // Add the interaction
+        targetUser.interactions.push({
+            interactionType,
+            details: details || `${interactionType} by ${req.user.username}`,
+        });
+
+        await targetUser.save();
+        res.json({ message: "Interaction recorded successfully" });
+    } catch (error) {
+        console.error("Error in recordInteraction:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const getUserStats = async (req, res) => {
+    try {
+        const userId = req.params.userId || req.user._id;
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Calculate date 7 days ago
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        // Calculate date 14 days ago for trend comparison
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+        // Get profile views
+        const recentProfileViews = user.interactions.filter(
+            interaction => 
+                interaction.interactionType === "PROFILE_VIEW" && 
+                interaction.date >= sevenDaysAgo
+        ).length;
+
+        const previousProfileViews = user.interactions.filter(
+            interaction => 
+                interaction.interactionType === "PROFILE_VIEW" && 
+                interaction.date >= fourteenDaysAgo && 
+                interaction.date < sevenDaysAgo
+        ).length;
+
+        // Get search appearances
+        const recentSearchAppearances = user.interactions.filter(
+            interaction => 
+                interaction.interactionType === "SEARCH_APPEARANCE" && 
+                interaction.date >= sevenDaysAgo
+        ).length;
+
+        const previousSearchAppearances = user.interactions.filter(
+            interaction => 
+                interaction.interactionType === "SEARCH_APPEARANCE" && 
+                interaction.date >= fourteenDaysAgo && 
+                interaction.date < sevenDaysAgo
+        ).length;
+
+        // Calculate trends (percentage change)
+        const profileViewsTrend = previousProfileViews === 0 
+            ? 100 
+            : ((recentProfileViews - previousProfileViews) / previousProfileViews) * 100;
+
+        const searchAppearancesTrend = previousSearchAppearances === 0 
+            ? 100 
+            : ((recentSearchAppearances - previousSearchAppearances) / previousSearchAppearances) * 100;
+
+        res.json({
+            profileViews: {
+                total: user.interactions.filter(i => i.interactionType === "PROFILE_VIEW").length,
+                recent: recentProfileViews,
+                trend: Math.round(profileViewsTrend)
+            },
+            searchAppearances: {
+                total: user.interactions.filter(i => i.interactionType === "SEARCH_APPEARANCE").length,
+                recent: recentSearchAppearances,
+                trend: Math.round(searchAppearancesTrend)
+            },
+            connections: user.connections.length
+        });
+    } catch (error) {
+        console.error("Error in getUserStats:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const getProfilePicture = async (req, res) => {
+    try {
+        const { username } = req.params;
+        const user = await User.findOne({ username }).select("profilePicture");
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({ profilePicture: user.profilePicture });
+    } catch (error) {
+        console.error("Error in getProfilePicture controller:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 //recommendations-system
 

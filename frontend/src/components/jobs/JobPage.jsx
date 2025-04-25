@@ -1,43 +1,71 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "../../context/ThemeContext";
 import JobSearchBar from "./JobSearchBar";
 import JobFilter from "./JobFilter";
 import JobList from "./JobList";
+import RecommendedJobs from "./RecommendedJobs";
 
 const JobPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({});
-  const navigate = useNavigate(); // Initialize navigate function
+  const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
 
   return (
-    <div className="flex flex-col gap-8 p-6 bg-gray-100 min-h-screen">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <h1 className="text-3xl font-bold text-gray-800">Job Opportunities</h1>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-background-dark' : 'bg-background'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Recommended Jobs Section */}
+        <RecommendedJobs isDarkMode={isDarkMode} />
 
-        {/* Search Bar */}
-        <JobSearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8">
+          <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-text-dark' : 'text-text'}`}>
+            Job Opportunities
+          </h1>
 
-        {/* Button to navigate to My Applied Jobs */}
-        <button
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition"
-          onClick={() => navigate("/my-applied-jobs")}
-        >
-          View My Applied Jobs
-        </button>
-      </div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            {/* Search Bar */}
+            <JobSearchBar 
+              searchTerm={searchTerm} 
+              setSearchTerm={setSearchTerm} 
+              isDarkMode={isDarkMode}
+            />
 
-      {/* Main Content */}
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filter Section */}
-        <div className="bg-white p-6 rounded-lg shadow-lg lg:w-1/3 flex-shrink-0">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Filter Jobs</h2>
-          <JobFilter filters={filters} setFilters={setFilters} />
+            {/* Button to navigate to My Applied Jobs */}
+            <button
+              className={`px-6 py-3 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-primary-dark text-white' 
+                  : 'bg-primary text-white'
+              }`}
+              onClick={() => navigate("/my-applied-jobs")}
+            >
+              View My Applied Jobs
+            </button>
+          </div>
         </div>
 
-        {/* Job List Section */}
-        <div className="flex-grow bg-white p-6 rounded-lg shadow-lg">
-          <JobList searchTerm={searchTerm} filters={filters} />
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filter Section */}
+          <div className={`lg:w-1/3 flex-shrink-0 ${
+            isDarkMode ? 'bg-background-dark' : 'bg-background'
+          } p-6 rounded-xl`}>
+            <h2 className={`text-xl font-semibold mb-6 ${
+              isDarkMode ? 'text-text-dark' : 'text-text'
+            }`}>
+              Filter Jobs
+            </h2>
+            <JobFilter filters={filters} setFilters={setFilters} isDarkMode={isDarkMode} />
+          </div>
+
+          {/* Job List Section */}
+          <div className={`flex-grow ${
+            isDarkMode ? 'bg-background-dark' : 'bg-background'
+          } p-6 rounded-xl`}>
+            <JobList searchTerm={searchTerm} filters={filters} isDarkMode={isDarkMode} />
+          </div>
         </div>
       </div>
     </div>

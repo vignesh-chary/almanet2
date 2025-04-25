@@ -50,8 +50,8 @@ const userSchema = new mongoose.Schema(
 			{
 				interactionType: String,
 				details: String,
-				date: { type: Date, default: Date.now },
-			},
+				timestamp: { type: Date, default: Date.now }
+			}
 		],
 		// Admin-specific fields
 		adminActions: [
@@ -63,6 +63,46 @@ const userSchema = new mongoose.Schema(
 			},
 		],
 		isSuperAdmin: { type: Boolean, default: false },
+		// Moderation preferences
+		preferences: {
+			contentFilterLevel: {
+				type: String,
+				enum: ["low", "medium", "high"],
+				default: "medium"
+			},
+			showFlaggedContent: {
+				type: Boolean,
+				default: false
+			},
+			moderationNotifications: {
+				type: Boolean,
+				default: true
+			},
+			darkMode: {
+				type: Boolean,
+				default: false
+			}
+		},
+		moderationHistory: [
+			{
+				contentType: {
+					type: String,
+					enum: ["post", "comment"],
+					required: true
+				},
+				contentId: {
+					type: mongoose.Schema.Types.ObjectId,
+					required: true
+				},
+				action: {
+					type: String,
+					enum: ["flag", "unflag", "delete"],
+					required: true
+				},
+				reason: String,
+				date: { type: Date, default: Date.now }
+			}
+		]
 	},
 	{ timestamps: true }
 );

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,Request
 from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
@@ -6,8 +6,13 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from mentor_recommendation import get_mentor_recommendations
+from job_recommendation import get_job_recommendations
 import logging
 import uvicorn
+from rapidfuzz import fuzz
+from naughty_words import NAUGHTY_WORDS
+# top of main.py
+
 
 app = FastAPI()
 # Add CORS middleware (if needed)
@@ -30,6 +35,33 @@ class UserRequest(BaseModel):
 class MentorRecommendationRequest(BaseModel):
     student: dict
     mentors: List[dict]
+
+class JobRecommendationRequest(BaseModel):
+    user: dict
+    jobs: List[dict]
+
+class Content(BaseModel):
+    content: str
+
+
+
+FUZZY_BLOCK_LIST = [
+    "fuck", "shit", "bitch", "kutte", "bhosdi", "madarchod", "scheisse"
+]
+
+ALL_BAD_WORDS = FUZZY_BLOCK_LIST + NAUGHTY_WORDS
+
+def is_fuzzy_match(word, bad_word):
+    length = len(word)
+    score = fuzz.partial_ratio(word, bad_word)
+
+    if length <= 3:
+        return False  # too short to match safely
+    elif length <= 5:
+        return score > 90
+    else:
+        return score > 85
+    
 
 # Preprocess user data
 def preprocess_user(user):
@@ -133,7 +165,43 @@ async def recommend_mentors(request: MentorRecommendationRequest):
     except Exception as e:
         logger.error(f"Error in /recommend-mentors endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
 
+
+@app.post("/moderate")
+
+async def moderate(content: Content):
+    text = content.content.lower()
+    
+    # Check for best fuzzy match
+    result = process.extractOne(
+        text, 
+        ALL_BAD_WORDS, 
+        scorer=fuzz.partial_ratio,
+        score_cutoff=85
+    )
+    
+    return {"flagged": bool(result)}
+
+async def moderate(content: Content):
+    text = content.content.lower()
+    tokens = text.split()
+
+    for token in tokens:
+        for bad in ALL_BAD_WORDS:
+            if is_fuzzy_match(token, bad):
+                return {"flagged": True}
+    
+    return {"flagged": False}
+
+@app.post("/recommend-jobs")
+async def recommend_jobs(request: JobRecommendationRequest):
+    try:
+        recommendations = get_job_recommendations(request.jobs, request.user)
+        return {"success": True, "recommendations": recommendations}
+    except Exception as e:
+        logger.error(f"Error in job recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Run the server
 if __name__ == "__main__":

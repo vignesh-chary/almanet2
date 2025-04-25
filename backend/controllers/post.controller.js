@@ -19,29 +19,59 @@ export const getFeedPosts = async (req, res) => {
 
 export const createPost = async (req, res) => {
 	try {
-		const { content, image } = req.body;
-		let newPost;
+		const { content } = req.body;
+		let imageUrl = null;
 
-		if (image) {
-			const imgResult = await cloudinary.uploader.upload(image);
-			newPost = new Post({
-				author: req.user._id,
-				content,
-				image: imgResult.secure_url,
-			});
-		} else {
-			newPost = new Post({
-				author: req.user._id,
-				content,
-			});
+		// Handle file upload if present
+		if (req.file) {
+			try {
+				// Convert buffer to base64 string
+				const base64File = req.file.buffer.toString('base64');
+				const uploadStr = `data:${req.file.mimetype};base64,${base64File}`;
+				
+				// Determine resource type based on file type
+				let resourceType = 'auto';
+				if (req.file.mimetype.startsWith('video/')) {
+					resourceType = 'video';
+				} else if (req.file.mimetype === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
+					resourceType = 'raw';
+				}
+
+				// Upload to Cloudinary
+				const uploadResult = await cloudinary.uploader.upload(uploadStr, {
+					resource_type: resourceType,
+					folder: 'posts'
+				});
+				imageUrl = uploadResult.secure_url;
+			} catch (uploadError) {
+				console.error("Error uploading file to Cloudinary:", uploadError);
+				return res.status(500).json({ 
+					message: "Error uploading file",
+					error: uploadError.message 
+				});
+			}
 		}
+
+		// Create new post
+		const newPost = new Post({
+			author: req.user._id,
+			content: content || "",
+			image: imageUrl
+		});
 
 		await newPost.save();
 
-		res.status(201).json(newPost);
+		// Populate author information
+		const populatedPost = await Post.findById(newPost._id)
+			.populate("author", "name username profilePicture headline");
+
+		res.status(201).json(populatedPost);
 	} catch (error) {
 		console.error("Error in createPost controller:", error);
-		res.status(500).json({ message: "Server error" });
+		res.status(500).json({ 
+			message: "Error creating post",
+			error: error.message 
+		});
 	}
 };
 

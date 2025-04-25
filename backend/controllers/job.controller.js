@@ -1,10 +1,12 @@
 import Job from '../models/job.model.js';
-import mongoose from 'mongoose'; 
+import mongoose from 'mongoose';
+import User from '../models/user.model.js';
+import { getJobRecommendations as getJobRecommendationsFromService } from '../services/recommendationService.js';
 
 // Create a new job
 export const createJob = async (req, res) => {
   try {
-    const { title, description, location, jobType, experienceLevel, position, requirements } = req.body;
+    const { title, description, location, jobType, experienceLevel, position, salary, requirements } = req.body;
 
     const job = await Job.create({
       title,
@@ -13,11 +15,12 @@ export const createJob = async (req, res) => {
       jobType,
       experienceLevel,
       position,
+      salary: Number(salary),
       requirements,
-      postedBy: req.user._id, 
+      postedBy: req.user._id,
     });
 
-    res.status(201).json({ message: 'Job created successfully', job }); 
+    res.status(201).json({ message: 'Job created successfully', job });
   } catch (error) {
     console.error('Error creating job:', error);
     res.status(500).json({ message: 'Server error' });
@@ -77,39 +80,96 @@ export const getAlumniJobs = async (req, res) => {
 // Get all jobs (with filtering and pagination)
 export const getAllJobs = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      search = '', 
-      jobType = '', 
-      location = '' 
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      jobType = '',
+      experienceLevel = '',
+      location = '',
+      salaryRange = ''
     } = req.query;
+
+    console.log("Received query parameters:", {
+      page,
+      limit,
+      search,
+      jobType,
+      experienceLevel,
+      location,
+      salaryRange
+    });
 
     // Build dynamic query object based on provided filters
     const query = {};
 
+    // Search in title and description
     if (search) {
-      query.title = { $regex: search, $options: 'i' }; // Case-insensitive search
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+      console.log("Search query:", query.$or);
     }
 
+    // Filter by job type (case-insensitive)
     if (jobType) {
-      query.jobType = jobType; // Exact match for job type
+      query.jobType = { $regex: new RegExp(`^${jobType}$`, 'i') };
+      console.log("Job type filter:", jobType);
     }
 
+    // Filter by experience level
+    if (experienceLevel) {
+      query.experienceLevel = experienceLevel;
+      console.log("Experience level filter:", experienceLevel);
+    }
+
+    // Filter by location
     if (location) {
-      query.location = { $regex: location, $options: 'i' }; // Case-insensitive location search
+      query.location = { $regex: location, $options: 'i' };
+      console.log("Location filter:", location);
     }
 
+    // Filter by salary range
+    if (salaryRange) {
+      const [min, max] = salaryRange.split('-').map(Number);
+      if (max) {
+        query.salary = { $gte: min, $lte: max };
+      } else {
+        query.salary = { $gte: min };
+      }
+      console.log("Salary range filter:", query.salary);
+    }
+
+    console.log("Final query object:", JSON.stringify(query, null, 2));
+
+    // Get total count for pagination
+    const totalJobs = await Job.countDocuments(query);
+    console.log("Total jobs matching query:", totalJobs);
+
+    // Get paginated results
     const jobs = await Job.find(query)
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .populate('postedBy', 'name email'); // Include user details
+      .populate('postedBy', 'name email')
+      .sort({ createdAt: -1 }); // Sort by newest first
 
-    const totalJobs = await Job.countDocuments(query);
+    console.log("Found jobs:", jobs.length);
+    console.log("Sample job data:", jobs.length > 0 ? JSON.stringify(jobs[0], null, 2) : "No jobs found");
 
-    res.status(200).json({ jobs, totalJobs });
+    // Log all jobs in the database to verify data exists
+    const allJobs = await Job.find({});
+    console.log("Total jobs in database:", allJobs.length);
+    console.log("Sample of all jobs:", allJobs.length > 0 ? JSON.stringify(allJobs[0], null, 2) : "No jobs in database");
+
+    res.status(200).json({ 
+      jobs, 
+      totalJobs,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalJobs / limit)
+    });
   } catch (error) {
-    console.error('Error fetching jobs:', error);
+    console.error('Error in getAllJobs controller:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -118,7 +178,7 @@ export const getAllJobs = async (req, res) => {
 export const getJobById = async (req, res) => {
   try {
     const { jobId } = req.params;
-    
+
 
     const job = await Job.findById(jobId).populate('postedBy', 'name email');
 
@@ -191,7 +251,7 @@ export const deleteJob = async (req, res) => {
 export const editJob = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const { title, description, location, jobType, experienceLevel, position, requirements } = req.body;
+    const { title, description, location, jobType, experienceLevel, position, salary, requirements } = req.body;
 
     const job = await Job.findById(jobId);
 
@@ -204,14 +264,26 @@ export const editJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to edit this job' });
     }
 
-    // Update the job details
+    // Update the job details with proper validation
     job.title = title || job.title;
     job.description = description || job.description;
     job.location = location || job.location;
     job.jobType = jobType || job.jobType;
     job.experienceLevel = experienceLevel || job.experienceLevel;
     job.position = position || job.position;
-    job.requirements = requirements || job.requirements;
+    job.salary = salary !== undefined ? Number(salary) : job.salary;
+    job.requirements = Array.isArray(requirements) ? requirements : job.requirements;
+
+    // Validate the job before saving
+    try {
+      await job.validate();
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      return res.status(400).json({ 
+        message: 'Validation failed',
+        errors: validationError.errors 
+      });
+    }
 
     await job.save();
 
@@ -347,9 +419,24 @@ export const updateApplicationStatus = async (req, res) => {
 
 export const getAppliedJobs = async (req, res) => {
   try {
+    if (!req.user || !req.user.email) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
     const appliedJobs = await Job.aggregate([
       {
-        $match: { "applications.email": req.user.email }, // Match jobs where the user has applied
+        $match: { "applications.email": req.user.email },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "postedBy",
+          foreignField: "_id",
+          as: "postedBy"
+        }
+      },
+      {
+        $unwind: "$postedBy"
       },
       {
         $project: {
@@ -357,17 +444,18 @@ export const getAppliedJobs = async (req, res) => {
           title: 1,
           location: 1,
           jobType: 1,
+          company: "$postedBy.name",
           applications: {
             $filter: {
               input: "$applications",
               as: "app",
-              cond: { $eq: ["$$app.email", req.user.email] }, // Filter only the logged-in user's application
+              cond: { $eq: ["$$app.email", req.user.email] },
             },
           },
         },
       },
       {
-        $unwind: "$applications", // Extract the application object
+        $unwind: "$applications",
       },
       {
         $project: {
@@ -375,10 +463,17 @@ export const getAppliedJobs = async (req, res) => {
           title: 1,
           location: 1,
           jobType: 1,
-          status: "$applications.status", // Get status of the application
+          company: 1,
+          status: "$applications.status",
+          appliedAt: "$applications.appliedAt",
         },
       },
+      {
+        $sort: { appliedAt: -1 } // Sort by most recent applications first
+      }
     ]);
+
+    console.log("Fetched applied jobs:", appliedJobs); // Debug log
 
     res.status(200).json(appliedJobs);
   } catch (error) {
@@ -386,56 +481,6 @@ export const getAppliedJobs = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
-
-// export const getAppliedJobs = async (req, res) => {
-//   try {
-//     const appliedJobs = await Job.aggregate([
-//       {
-//         $match: { "applications.email": req.user.email }, // Match jobs where user has applied
-//       },
-//       {
-//         $project: {
-//           _id: 1,
-//           title: 1,
-//           location: 1,
-//           jobType: 1,
-//           applications: {
-//             $filter: {
-//               input: "$applications",
-//               as: "app",
-//               cond: { $eq: ["$$app.email", req.user.email] }, // Filter only the logged-in user's application
-//             },
-//           },
-//         },
-//       },
-//       {
-//         $unwind: "$applications", // Extract the application object
-//       },
-//       {
-//         $project: {
-//           jobId: "$_id",
-//           title: 1,
-//           location: 1,
-//           jobType: 1,
-//           status: "$applications.status", // Get status of the application
-//         },
-//       },
-//     ]);
-
-//     res.json(appliedJobs);
-//   } catch (error) {
-//     console.log("Error in getAppliedJobs controller:", error);
-//     console.error("Error in getAppliedJobs controller:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-
-
-
-
-
 
 // export const getAppliedJobs = async (req, res) => {
 //   try {
@@ -524,8 +569,8 @@ export const getJobApplicants = async (req, res) => {
     const { jobId } = req.params;
 
     const job = await Job.findById(jobId)
-      .populate('postedBy', 'name email') 
-      .select('applications'); 
+      .populate('postedBy', 'name email')
+      .select('applications');
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
@@ -536,10 +581,134 @@ export const getJobApplicants = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to view applicants for this job' });
     }
 
-    res.status(200).json(job.applications); 
+    res.status(200).json(job.applications);
   } catch (error) {
     console.error('Error fetching job applicants:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get job recommendations for the current user
+export const getJobRecommendations = async (req, res) => {
+  try {
+    // Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const userId = req.user._id;
+    const user = await User.findById(userId).select('skills experience education location');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get all active jobs
+    const jobs = await Job.find({})
+      .populate('postedBy', 'name email')
+      .select('title description location jobType experienceLevel position requirements');
+
+    if (!jobs || jobs.length === 0) {
+      return res.status(200).json({
+        success: true,
+        recommendations: []
+      });
+    }
+
+    // Calculate match scores for each job
+    const recommendations = jobs.map(job => {
+      let matchScore = 0;
+      let matchDetails = {
+        skillsMatch: 0,
+        experienceMatch: 0,
+        educationMatch: 0
+      };
+
+      // Skills matching (40% weight)
+      if (user.skills && job.requirements && job.requirements.length > 0) {
+        const matchingSkills = user.skills.filter(skill =>
+          job.requirements.some(req =>
+            req.toLowerCase().includes(skill.toLowerCase())
+          )
+        );
+        matchDetails.skillsMatch = matchingSkills.length / job.requirements.length;
+        matchScore += matchDetails.skillsMatch * 0.4;
+      }
+
+      // Experience matching (30% weight)
+      if (user.experience && user.experience.length > 0) {
+        const userExperience = user.experience[0]; // Consider most recent experience
+        const jobLevel = job.experienceLevel?.toLowerCase() || '';
+
+        // Simple experience level matching
+        if (jobLevel === 'entry' && user.experience.length === 0) {
+          matchDetails.experienceMatch = 1;
+        } else if (jobLevel === 'mid' && user.experience.length >= 1) {
+          matchDetails.experienceMatch = 1;
+        } else if (jobLevel === 'senior' && user.experience.length >= 3) {
+          matchDetails.experienceMatch = 1;
+        }
+        matchScore += matchDetails.experienceMatch * 0.3;
+      }
+
+      // Education matching (20% weight)
+      if (user.education && user.education.length > 0 && job.requirements) {
+        const userEducation = user.education[0]; // Consider highest education
+        const jobRequirements = job.requirements.join(' ').toLowerCase();
+
+        // Check if field of study matches job requirements
+        if (userEducation.fieldOfStudy &&
+          jobRequirements.includes(userEducation.fieldOfStudy.toLowerCase())) {
+          matchDetails.educationMatch = 1;
+        }
+        matchScore += matchDetails.educationMatch * 0.2;
+      }
+
+      // Location matching (10% weight)
+      if (user.location && job.location) {
+        const locationMatch = user.location.toLowerCase() === job.location.toLowerCase() ? 1 : 0;
+        matchScore += locationMatch * 0.1;
+      }
+
+      return {
+        job: {
+          _id: job._id,
+          title: job.title,
+          description: job.description,
+          location: job.location,
+          jobType: job.jobType,
+          experienceLevel: job.experienceLevel,
+          position: job.position,
+          requirements: job.requirements,
+          postedBy: job.postedBy
+        },
+        matchScore,
+        matchDetails
+      };
+    });
+
+    // Sort by match score and return top 3
+    const topRecommendations = recommendations
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 3);
+
+    res.status(200).json({
+      success: true,
+      recommendations: topRecommendations
+    });
+  } catch (error) {
+    console.error('Error getting job recommendations:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting job recommendations',
+      error: error.message
+    });
   }
 };
 

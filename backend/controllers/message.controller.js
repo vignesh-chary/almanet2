@@ -70,3 +70,22 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Get all messages for the current user
+export const getAllMessages = async (req, res) => {
+  try {
+    const myId = req.user._id;
+
+    const messages = await Message.find({
+      $or: [
+        { senderId: myId },
+        { receiverId: myId }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.log("Error in getAllMessages controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

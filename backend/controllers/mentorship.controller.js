@@ -1,10 +1,9 @@
 import Mentorship from "../models/mentorship.model.js";
 import Mentor from "../models/mentor.model.js";
-import Mentee from "../models/mentee.model.js";
-import User from "../models/user.model.js"; // Adjust the path based on your folder structure
+import User from "../models/user.model.js";
 import Goal from "../models/goal.model.js";
-
 import Meeting from "../models/Meeting.model.js";
+
 /**
  * Mentee requests mentorship from a mentor
  */
@@ -14,10 +13,10 @@ import Meeting from "../models/Meeting.model.js";
 export const requestMentorship = async (req, res) => {
   try {
     const { mentorId, message, mentorshipType } = req.body;
-    
+
     // Ensure mentee is logged in (extracted from auth middleware)
-    const menteeId = req.user._id; 
-    
+    const menteeId = req.user._id;
+
     if (!mentorId || !mentorshipType) {
       return res.status(400).json({ message: "Mentor ID and mentorship type are required." });
     }
@@ -233,7 +232,7 @@ export const updateMentorshipStatus = async (req, res) => {
 
 export const getMentors = async (req, res) => {
   try {
-    const { searchQuery } = req.query;
+    const { searchQuery, expertise, industry } = req.query;
     let filter = {};
 
     // Search Query (Name or Expertise)
@@ -242,6 +241,16 @@ export const getMentors = async (req, res) => {
         { name: { $regex: searchQuery, $options: "i" } },
         { expertise: { $regex: searchQuery, $options: "i" } },
       ];
+    }
+
+    // Expertise filter
+    if (expertise) {
+      filter.expertise = { $regex: expertise, $options: "i" };
+    }
+
+    // Industry filter - use exact match
+    if (industry) {
+      filter.industry = industry;
     }
 
     // Fetch mentors with filters
@@ -457,42 +466,42 @@ import mongoose from "mongoose";
 
 // Fetch goals with subgoals
 export const getGoals = async (req, res) => {
-    try {
-        const { mentorshipId } = req.params;
+  try {
+    const { mentorshipId } = req.params;
 
-        if (!mentorshipId) {
-            return res.status(400).json({ error: "Mentorship ID is required." });
-        }
-
-        const goals = await Goal.find({ mentorship: mentorshipId }).sort({ createdAt: -1 });
-        res.json(goals);
-    } catch (error) {
-        console.error("Error fetching goals:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+    if (!mentorshipId) {
+      return res.status(400).json({ error: "Mentorship ID is required." });
     }
+
+    const goals = await Goal.find({ mentorship: mentorshipId }).sort({ createdAt: -1 });
+    res.json(goals);
+  } catch (error) {
+    console.error("Error fetching goals:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
 // Add a goal (with optional subgoals)
 export const addGoal = async (req, res) => {
   try {
-      const { mentorshipId } = req.params;
-      const { text, setBy } = req.body; // Removed subgoals from here
+    const { mentorshipId } = req.params;
+    const { text, setBy } = req.body; // Removed subgoals from here
 
-      if (!mentorshipId || !text || !setBy) {
-          return res.status(400).json({ error: "Mentorship ID, text, and setBy are required." });
-      }
+    if (!mentorshipId || !text || !setBy) {
+      return res.status(400).json({ error: "Mentorship ID, text, and setBy are required." });
+    }
 
-      const goal = await Goal.create({
-          mentorship: mentorshipId,
-          text,
-          setBy,
-          subgoals: [], // Initialize subgoals as an empty array
-      });
+    const goal = await Goal.create({
+      mentorship: mentorshipId,
+      text,
+      setBy,
+      subgoals: [], // Initialize subgoals as an empty array
+    });
 
-      res.status(201).json(goal);
+    res.status(201).json(goal);
   } catch (error) {
-      console.error("Error adding goal:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error adding goal:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -524,45 +533,45 @@ export const addSubgoal = async (req, res) => {
 // Toggle Subgoal Completion
 export const toggleSubgoal = async (req, res) => {
   try {
-      const { goalId, subgoalId } = req.params;
-      const { completed }  = req.body; // Get the completed status from the request body
+    const { goalId, subgoalId } = req.params;
+    const { completed } = req.body; // Get the completed status from the request body
 
-      const goal = await Goal.findOneAndUpdate(
-          { _id: goalId, "subgoals._id": subgoalId },
-          { $set: { "subgoals.$.completed": completed } }, // Use the value from the body
-          { new: true, runValidators: true }
-      ).populate("subgoals");
+    const goal = await Goal.findOneAndUpdate(
+      { _id: goalId, "subgoals._id": subgoalId },
+      { $set: { "subgoals.$.completed": completed } }, // Use the value from the body
+      { new: true, runValidators: true }
+    ).populate("subgoals");
 
-      if (!goal) {
-          return res.status(404).json({ error: "Subgoal not found." });
-      }
+    if (!goal) {
+      return res.status(404).json({ error: "Subgoal not found." });
+    }
 
-      res.status(200).json(goal);
+    res.status(200).json(goal);
   } catch (error) {
-      console.error("Error updating subgoal:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error updating subgoal:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 // Delete a goal and its subgoals (improved)
 export const deleteGoal = async (req, res) => {
   try {
-      const { mentorshipId, goalId } = req.params;
+    const { mentorshipId, goalId } = req.params;
 
-      if (!goalId || !mentorshipId) {
-          return res.status(400).json({ error: "Mentorship ID and Goal ID are required." });
-      }
+    if (!goalId || !mentorshipId) {
+      return res.status(400).json({ error: "Mentorship ID and Goal ID are required." });
+    }
 
-      const goal = await Goal.findOneAndDelete({ _id: goalId, mentorship: mentorshipId }); // Combined find and delete
+    const goal = await Goal.findOneAndDelete({ _id: goalId, mentorship: mentorshipId }); // Combined find and delete
 
-      if (!goal) {
-          return res.status(404).json({ error: "Goal not found" });
-      }
+    if (!goal) {
+      return res.status(404).json({ error: "Goal not found" });
+    }
 
-      res.status(200).json({ message: "Goal and related subgoals deleted successfully", deletedGoalId: goalId });
+    res.status(200).json({ message: "Goal and related subgoals deleted successfully", deletedGoalId: goalId });
   } catch (error) {
-      console.error("Error deleting goal:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error deleting goal:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -619,21 +628,21 @@ export const getmentorshipId = async (req, res) => {
     const { mentor, mentee } = req.query; // Get from req.query
 
     if (!mentor || !mentee) {
-        return res.status(400).json({ error: "Mentor and Mentee IDs are required." });
+      return res.status(400).json({ error: "Mentor and Mentee IDs are required." });
     }
 
     // Find the mentorship using BOTH mentor and mentee IDs (Crucial)
     const mentorship = await Mentorship.findOne({ mentor: mentor, mentee: mentee }); // Example query
 
     if (!mentorship) {
-        return res.status(404).json({ error: "Mentorship not found" });
+      return res.status(404).json({ error: "Mentorship not found" });
     }
 
     res.json({ mentorshipId: mentorship._id });
-} catch (error) {
+  } catch (error) {
     console.error("Error fetching mentorship ID:", error);
     res.status(500).json({ error: "Internal Server Error" });
-}
+  }
 };
 
 
@@ -765,17 +774,17 @@ export const getMentorMentees = async (req, res) => {
 
 export const findMentorIdByUserId = async (req, res) => {
   try {
-      const { userId } = req.params;
-      const mentor = await Mentor.findOne({ userId: userId });
+    const { userId } = req.params;
+    const mentor = await Mentor.findOne({ userId: userId });
 
-      if (mentor) {
-          res.json({ mentorId: mentor._id });
-      } else {
-          res.status(404).json({ message: 'Mentor not found' });
-      }
+    if (mentor) {
+      res.json({ mentorId: mentor._id });
+    } else {
+      res.status(404).json({ message: 'Mentor not found' });
+    }
   } catch (error) {
-      console.error('Error finding mentor ID:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error finding mentor ID:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -965,3 +974,85 @@ export const getMyMeetings = async (req, res) => {
 //     res.status(500).json({ message: "Server error", error });
 //   }
 // };
+
+export const getStats = async (req, res) => {
+  try {
+    console.log("Fetching stats...");
+
+    // Get total number of mentors
+    const totalMentors = await Mentor.countDocuments();
+    console.log("Total mentors:", totalMentors);
+
+    // Get total number of active engagements (mentorships with status "accepted")
+    const activeEngagements = await Mentorship.countDocuments({ status: "accepted" });
+    console.log("Active engagements:", activeEngagements);
+
+    // Get total number of successful mentorships (mentorships with status "completed")
+    const successfulMentorships = await Mentorship.countDocuments({ status: "completed" });
+    console.log("Successful mentorships:", successfulMentorships);
+
+    res.status(200).json({
+      totalMentors,
+      activeEngagements,
+      successfulMentorships
+    });
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    res.status(500).json({ message: "Error fetching stats", error: error.message });
+  }
+};
+
+export const getMentorDashboardStats = async (req, res) => {
+  try {
+    const mentorId = req.user.id;
+    
+    // Find the mentor using userId
+    const mentor = await Mentor.findOne({ userId: mentorId });
+    if (!mentor) {
+      return res.status(404).json({ message: "Mentor profile not found" });
+    }
+
+    // Get total mentees (accepted and completed mentorships)
+    const totalMentees = await Mentorship.countDocuments({
+      mentor: mentor._id,
+      status: { $in: ["accepted", "completed"] }
+    });
+
+    // Get active goals using the Goal model
+    const activeGoals = await Goal.countDocuments({
+      mentorship: { $in: await Mentorship.find({ mentor: mentor._id, status: "accepted" }).distinct('_id') },
+      completed: false
+    });
+
+    // Get upcoming sessions using the Meeting model
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const upcomingSessions = await Meeting.countDocuments({
+      mentorId: mentor._id,
+      date: { $gte: today.toISOString().split('T')[0] }, // Format: YYYY-MM-DD
+      status: "scheduled"
+    });
+
+    // Get additional stats for better insights
+    const completedGoals = await Goal.countDocuments({
+      mentorship: { $in: await Mentorship.find({ mentor: mentor._id }).distinct('_id') },
+      completed: true
+    });
+
+    const totalGoals = activeGoals + completedGoals;
+    const completionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
+
+    res.status(200).json({
+      totalMentees,
+      activeGoals,
+      upcomingSessions,
+      completedGoals,
+      totalGoals,
+      completionRate: Math.round(completionRate)
+    });
+  } catch (error) {
+    console.error("Error fetching mentor dashboard stats:", error);
+    res.status(500).json({ message: "Error fetching dashboard stats", error: error.message });
+  }
+};

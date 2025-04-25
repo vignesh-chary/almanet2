@@ -1,112 +1,218 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Users, BarChart2, Menu, ChevronRight } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
+import { useQuery } from "@tanstack/react-query";
+import { axiosInstance } from "../../lib/axios";
 
 const AdminSidebar = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const location = useLocation();
+    const location = useLocation();
+    const { isDarkMode } = useTheme();
 
-  const isActive = (path) => {
-    return location.pathname.startsWith(path);
-  };
+    // Fetch user data to check admin status
+    const { data: userData } = useQuery({
+        queryKey: ["authUser"],
+        queryFn: async () => {
+            const response = await axiosInstance.get("/auth/me");
+            return response.data;
+        },
+    });
 
-  return (
-    <div
-      className={`fixed top-0 left-0 h-full ${
-        isExpanded ? "w-64" : "w-20"
-      } bg-indigo-900 text-white transition-all duration-300 flex flex-col shadow-lg`}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-    >
-      <div className="flex items-center justify-between px-4 py-5 border-b border-indigo-800/50">
-        <h2 
-          className={`text-lg font-bold bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent transition-opacity duration-300 ${
-            isExpanded ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          Admin Panel
-        </h2>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-indigo-200 hover:text-white transition-colors"
-          aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          <Menu size={24} />
-        </button>
-      </div>
+    // If user is not admin, don't render the sidebar
+    if (userData?.role !== "admin") {
+        return null;
+    }
 
-      <nav className="mt-6 flex flex-col gap-2 px-2">
-        <SidebarLink 
-          to="/admin/events"
-          icon={<Calendar size={20} />}
-          label="Events"
-          isActive={isActive("/admin/events")}
-          isExpanded={isExpanded}
-        />
-        
-        {/* Uncomment these when needed */}
-        {/* 
-        <SidebarLink 
-          to="/admin/users"
-          icon={<Users size={20} />}
-          label="Users"
-          isActive={isActive("/admin/users")}
-          isExpanded={isExpanded}
-        />
-        
-        <SidebarLink 
-          to="/admin/stats"
-          icon={<BarChart2 size={20} />}
-          label="Statistics"
-          isActive={isActive("/admin/stats")}
-          isExpanded={isExpanded}
-        />
-        */}
-      </nav>
-      
-      <div className="mt-auto mb-6 px-2">
-        {isExpanded && (
-          <div className="text-xs text-indigo-300 px-4 pb-2">
-            © 2025 Almanet
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+    const isActive = (path) => {
+        return location.pathname === path;
+    };
 
-// Extracted SidebarLink component for better organization
-const SidebarLink = ({ to, icon, label, isActive, isExpanded }) => {
-  return (
-    <Link
-      to={to}
-      className={`flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 group ${
-        isActive 
-          ? "bg-indigo-700 text-white" 
-          : "text-indigo-200 hover:bg-indigo-800/60 hover:text-white"
-      }`}
-    >
-      <div className="flex items-center gap-3 relative">
-        <span className={`${isActive ? "text-white" : "text-indigo-300 group-hover:text-white"} transition-colors`}>
-          {icon}
-        </span>
-        
-        {isExpanded && (
-          <span className="font-medium">{label}</span>
-        )}
-        
-        {isActive && (
-          <span className="absolute left-0 -ml-4 top-1/2 transform -translate-y-1/2 h-8 w-1 bg-indigo-400 rounded-r-full" />
-        )}
-      </div>
-      
-      {isActive && !isExpanded && (
-        <span className="absolute right-0 mr-2 text-indigo-300">
-          <ChevronRight size={16} />
-        </span>
-      )}
-    </Link>
-  );
+    return (
+        <div className={`fixed left-0 top-0 h-full w-64 border-r ${
+            isDarkMode ? 'border-border-dark bg-background-dark' : 'border-border bg-background'
+        }`}>
+            <div className="flex h-full flex-col">
+                <div className="flex h-16 items-center justify-center border-b px-4">
+                    <Link to="/admin" className="flex items-center gap-2">
+                        <span className={`text-xl font-bold ${
+                            isDarkMode ? 'text-text-dark' : 'text-text'
+                        }`}>
+                            Admin Panel
+                        </span>
+                    </Link>
+                </div>
+
+                <nav className="flex-1 space-y-1 p-4">
+                    <Link
+                        to="/admin/dashboard"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                            isActive("/admin/dashboard")
+                                ? isDarkMode
+                                    ? "bg-primary-dark text-white"
+                                    : "bg-primary text-white"
+                                : isDarkMode
+                                ? "text-text-dark hover:bg-secondary-dark"
+                                : "text-text hover:bg-secondary"
+                        }`}
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                            />
+                        </svg>
+                        Dashboard
+                    </Link>
+
+                    <Link
+                        to="/admin/analytics"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                            isActive("/admin/analytics")
+                                ? isDarkMode
+                                    ? "bg-primary-dark text-white"
+                                    : "bg-primary text-white"
+                                : isDarkMode
+                                ? "text-text-dark hover:bg-secondary-dark"
+                                : "text-text hover:bg-secondary"
+                        }`}
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                            />
+                        </svg>
+                        Analytics
+                    </Link>
+
+                    <Link
+                        to="/admin/event-posts"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                            isActive("/admin/event-posts")
+                                ? isDarkMode
+                                    ? "bg-primary-dark text-white"
+                                    : "bg-primary text-white"
+                                : isDarkMode
+                                ? "text-text-dark hover:bg-secondary-dark"
+                                : "text-text hover:bg-secondary"
+                        }`}
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                        </svg>
+                        Posts
+                    </Link>
+
+                    {/* <Link
+                        to="/admin/users"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                            isActive("/admin/users")
+                                ? isDarkMode
+                                    ? "bg-primary-dark text-white"
+                                    : "bg-primary text-white"
+                                : isDarkMode
+                                ? "text-text-dark hover:bg-secondary-dark"
+                                : "text-text hover:bg-secondary"
+                        }`}
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                            />
+                        </svg>
+                        Users
+                    </Link> */}
+
+                    <Link
+                        to="/admin/events"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                            isActive("/admin/events")
+                                ? isDarkMode
+                                    ? "bg-primary-dark text-white"
+                                    : "bg-primary text-white"
+                                : isDarkMode
+                                ? "text-text-dark hover:bg-secondary-dark"
+                                : "text-text hover:bg-secondary"
+                        }`}
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                        </svg>
+                        Events
+                    </Link>
+
+                    {/* <Link
+                        to="/admin/jobs"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
+                            isActive("/admin/jobs")
+                                ? isDarkMode
+                                    ? "bg-primary-dark text-white"
+                                    : "bg-primary text-white"
+                                : isDarkMode
+                                ? "text-text-dark hover:bg-secondary-dark"
+                                : "text-text hover:bg-secondary"
+                        }`}
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                        </svg>
+                        Jobs
+                    </Link> */}
+                </nav>
+            </div>
+        </div>
+    );
 };
 
 export default AdminSidebar;

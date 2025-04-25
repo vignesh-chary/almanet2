@@ -3,6 +3,7 @@ import {
 	createCommentNotificationEmailTemplate,
 	createConnectionAcceptedEmailTemplate,
 	createWelcomeEmailTemplate,
+	createPasswordResetEmailTemplate,
 } from "./emailTemplates.js";
 
 export const sendWelcomeEmail = async (email, name, profileUrl) => {
@@ -58,4 +59,22 @@ export const sendConnectionAcceptedEmail = async (senderEmail, senderName, recip
 			category: "connection_accepted",
 		});
 	} catch (error) {}
+};
+
+export const sendPasswordResetEmail = async (email, name, resetUrl) => {
+	const recipient = [{ email }];
+
+	try {
+		const response = await mailtrapClient.send({
+			from: sender,
+			to: recipient,
+			subject: "Password Reset Request",
+			html: createPasswordResetEmailTemplate(name, resetUrl),
+			category: "password_reset",
+		});
+
+		console.log("Password reset email sent successfully", response);
+	} catch (error) {
+		throw error;
+	}
 };

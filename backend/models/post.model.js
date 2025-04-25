@@ -11,8 +11,25 @@ const postSchema = new mongoose.Schema(
 				content: { type: String },
 				user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 				createdAt: { type: Date, default: Date.now },
+				moderationStatus: {
+					isFlagged: { type: Boolean, default: false },
+					flaggedAt: { type: Date },
+					reasons: [String],
+					moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+				}
 			},
 		],
+		moderationStatus: {
+			isFlagged: { type: Boolean, default: false },
+			flaggedAt: { type: Date },
+			reasons: [String],
+			moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+			analysis: {
+				sentiment: { type: Number },
+				toxicityScore: { type: Number },
+				flaggedWords: [String]
+			}
+		}
 	},
 	{ timestamps: true }
 );

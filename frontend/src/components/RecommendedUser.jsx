@@ -1,132 +1,202 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "../lib/axios";
-import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import { Check, Clock, UserCheck, UserPlus, X } from "lucide-react";
+import { UserPlus, Users, UserCheck, Loader2, Check, Clock, X } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { useState } from "react";
 
 const RecommendedUser = ({ user }) => {
-    //  console.log("RecommendedUser user prop:", user);
-	const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
+    const [localStatus, setLocalStatus] = useState(null);
+    
+    // Check connection status
+    const { data: connectionStatus, isLoading: isLoadingStatus } = useQuery({
+        queryKey: ["connectionStatus", user._id],
+        queryFn: async () => {
+            try {
+                const res = await axiosInstance.get(`/connections/status/${user._id}`);
+                return res.data;
+            } catch (err) {
+                console.error("Error checking connection status:", err);
+                return { status: "none" };
+            }
+        },
+    });
 
-	const { data: connectionStatus, isLoading } = useQuery({
-		queryKey: ["connectionStatus", user._id],
-		queryFn: () => axiosInstance.get(`/connections/status/${user._id}`),
-	});
+    // Fetch profile picture
+    const { data: profilePictureData, isLoading: isLoadingPicture, error: pictureError } = useQuery({
+        queryKey: ["profilePicture", user.username],
+        queryFn: async () => {
+            try {
+                console.log("Fetching profile picture for:", user.username);
+                const res = await axiosInstance.get(`/users/profile-picture/${user.username}`);
+                console.log("Profile picture response:", res.data);
+                return res.data;
+            } catch (err) {
+                // If it's a 404, just return null without logging an error
+                if (err.response?.status === 404) {
+                    console.log(`No profile picture found for user: ${user.username}`);
+                    return { profilePicture: null };
+                }
+                console.error("Error fetching profile picture:", err.response?.data?.message || err.message);
+                return { profilePicture: null };
+            }
+        },
+        enabled: !!user.username,
+        retry: 0, // Don't retry on failure since 404s are expected
+    });
 
-	const { mutate: sendConnectionRequest } = useMutation({
-		mutationFn: (userId) => axiosInstance.post(`/connections/request/${userId}`),
-		onSuccess: () => {
-			toast.success("Connection request sent successfully");
-			queryClient.invalidateQueries({ queryKey: ["connectionStatus", user._id] });
-		},
-		onError: (error) => {
-			toast.error(error.response?.data?.error || "An error occurred");
-		},
-	});
+    // Debug logs
+    console.log("User data:", user);
+    console.log("Profile picture data:", profilePictureData);
+    console.log("Picture error:", pictureError);
 
-	const { mutate: acceptRequest } = useMutation({
-		mutationFn: (requestId) => axiosInstance.put(`/connections/accept/${requestId}`),
-		onSuccess: () => {
-			toast.success("Connection request accepted");
-			queryClient.invalidateQueries({ queryKey: ["connectionStatus", user._id] });
-		},
-		onError: (error) => {
-			toast.error(error.response?.data?.error || "An error occurred");
-		},
-	});
+    // Send connection request mutation
+    const sendRequestMutation = useMutation({
+        mutationFn: async () => {
+            const res = await axiosInstance.post(`/connections/request/${user._id}`);
+            return res.data;
+        },
+        onSuccess: () => {
+            toast.success("Connection request sent successfully!");
+            setLocalStatus("pending");
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ["recommendedUsers"] });
+            queryClient.invalidateQueries({ queryKey: ["connectionStatus", user._id] });
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || "Failed to send connection request");
+        },
+    });
 
-	const { mutate: rejectRequest } = useMutation({
-		mutationFn: (requestId) => axiosInstance.put(`/connections/reject/${requestId}`),
-		onSuccess: () => {
-			toast.success("Connection request rejected");
-			queryClient.invalidateQueries({ queryKey: ["connectionStatus", user._id] });
-		},
-		onError: (error) => {
-			toast.error(error.response?.data?.error || "An error occurred");
-		},
-	});
+    // Accept connection request mutation
+    const acceptRequestMutation = useMutation({
+        mutationFn: async () => {
+            const res = await axiosInstance.put(`/connections/accept/${connectionStatus?.requestId || user._id}`);
+            return res.data;
+        },
+        onSuccess: () => {
+            toast.success("Connection request accepted!");
+            setLocalStatus("connected");
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ["recommendedUsers"] });
+            queryClient.invalidateQueries({ queryKey: ["connectionStatus", user._id] });
+            queryClient.invalidateQueries({ queryKey: ["connections"] });
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || "Failed to accept connection request");
+        },
+    });
 
-	const renderButton = () => {
-		if (isLoading) {
-			return (
-				<button className='px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-500' disabled>
-					Loading...
-				</button>
-			);
-		}
+    // Reject connection request mutation
+    const rejectRequestMutation = useMutation({
+        mutationFn: async () => {
+            const res = await axiosInstance.put(`/connections/reject/${connectionStatus?.requestId || user._id}`);
+            return res.data;
+        },
+        onSuccess: () => {
+            toast.success("Connection request rejected");
+            setLocalStatus("none");
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ["recommendedUsers"] });
+            queryClient.invalidateQueries({ queryKey: ["connectionStatus", user._id] });
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || "Failed to reject connection request");
+        },
+    });
 
-		switch (connectionStatus?.data?.status) {
-			case "pending":
-				return (
-					<button
-						className='px-3 py-1 rounded-full text-sm bg-yellow-500 text-white flex items-center'
-						disabled
-					>
-						<Clock size={16} className='mr-1' />
-						Pending
-					</button>
-				);
-			case "received":
-				return (
-					<div className='flex gap-2 justify-center'>
-						<button
-							onClick={() => acceptRequest(connectionStatus.data.requestId)}
-							className={`rounded-full p-1 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white`}
-						>
-							<Check size={16} />
-						</button>
-						<button
-							onClick={() => rejectRequest(connectionStatus.data.requestId)}
-							className={`rounded-full p-1 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white`}
-						>
-							<X size={16} />
-						</button>
-					</div>
-				);
-			case "connected":
-				return (
-					<button
-						className='px-3 py-1 rounded-full text-sm bg-green-500 text-white flex items-center'
-						disabled
-					>
-						<UserCheck size={16} className='mr-1' />
-						Connected
-					</button>
-				);
-			default:
-				return (
-					<button
-						className='px-3 py-1 rounded-full text-sm border border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-200 flex items-center'
-						onClick={handleConnect}
-					>
-						<UserPlus size={16} className='mr-1' />
-						Connect
-					</button>
-				);
-		}
-	};
+    const handleSendRequest = () => {
+        sendRequestMutation.mutate();
+    };
 
-	const handleConnect = () => {
-		if (connectionStatus?.data?.status === "not_connected") {
-			sendConnectionRequest(user._id);
-		}
-	};
+    const handleAcceptRequest = () => {
+        acceptRequestMutation.mutate();
+    };
 
-	return (
-		<div className='flex items-center justify-between mb-4'>
-			<Link to={`/profile/${user.username}`} className='flex items-center flex-grow'>
-				<img
-					src={user.profilePicture || "/avatar.png"}
-					alt={user.name}
-					className='w-12 h-12 rounded-full mr-3'
-				/>
-				<div>
-					<h3 className='font-semibold text-sm'>{user.name}</h3>
-					<p className='text-xs text-info'>{user.headline}</p>
-				</div>
-			</Link>
-			{renderButton()}
-		</div>
-	);
+    const handleRejectRequest = () => {
+        rejectRequestMutation.mutate();
+    };
+
+    // Use local status if available, otherwise use the fetched status
+    const currentStatus = localStatus || connectionStatus?.status || "none";
+    const requestId = connectionStatus?.requestId;
+
+    return (
+        <div className="flex min-w-[960px] max-w-[960px] items-center justify-between bg-background dark:bg-background-dark px-4 py-2 transition-colors duration-300">
+            <div className="flex items-center gap-4">
+                <Link to={`/profile/${user.username}`} className="flex-shrink-0">
+                    {isLoadingPicture ? (
+                        <div className="h-14 w-14 rounded-full bg-secondary dark:bg-secondary-dark animate-pulse" />
+                    ) : (
+                        <img
+                            src={
+                                (typeof profilePictureData === 'object' ? profilePictureData?.profilePicture : profilePictureData) || 
+                                user.profilePicture || 
+                                `https://ui-avatars.com/api/?name=${user.name || 'Anonymous'}&background=random`
+                            }
+                            alt={user.name}
+                            className="h-14 w-14 rounded-full object-cover"
+                            onError={(e) => {
+                                console.log("Image load error, falling back to avatar");
+                                e.target.src = `https://ui-avatars.com/api/?name=${user.name || 'Anonymous'}&background=random`;
+                            }}
+                        />
+                    )}
+                </Link>
+                <div className="flex flex-col justify-center">
+                    <Link to={`/profile/${user.username}`} className="text-text dark:text-text-dark text-base font-medium leading-normal hover:underline transition-colors duration-300">
+                        {user.name}
+                    </Link>
+                    <p className="text-text-muted dark:text-text-dark-muted text-sm font-normal leading-normal transition-colors duration-300">{user.headline || "No headline"}</p>
+                </div>
+            </div>
+
+            <div className="shrink-0">
+                {isLoadingStatus ? (
+                    <button disabled className="flex min-w-[140px] items-center justify-center rounded-xl bg-secondary dark:bg-secondary-dark px-4 py-2 text-text dark:text-text-dark text-sm font-medium leading-normal transition-colors duration-300">
+                        <Loader2 size={16} className="animate-spin mr-2" />
+                        <span>Loading...</span>
+                    </button>
+                ) : currentStatus === "pending" ? (
+                    <button disabled className="flex min-w-[140px] items-center justify-center rounded-xl bg-secondary dark:bg-secondary-dark px-4 py-2 text-text dark:text-text-dark text-sm font-medium leading-normal transition-colors duration-300">
+                        <Clock size={16} className="mr-2" />
+                        <span>Request Sent</span>
+                    </button>
+                ) : currentStatus === "received" ? (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleAcceptRequest}
+                            className="flex min-w-[140px] items-center justify-center rounded-xl bg-primary dark:bg-primary-dark px-4 py-2 text-white hover:bg-primary-dark dark:hover:bg-primary text-sm font-medium leading-normal transition-colors duration-300"
+                        >
+                            <Check size={16} className="mr-2" />
+                            <span>Accept</span>
+                        </button>
+                        <button
+                            onClick={handleRejectRequest}
+                            className="flex min-w-[140px] items-center justify-center rounded-xl bg-secondary dark:bg-secondary-dark px-4 py-2 text-text dark:text-text-dark text-sm font-medium leading-normal hover:bg-border dark:hover:bg-border-dark transition-colors duration-300"
+                        >
+                            <X size={16} className="mr-2" />
+                            <span>Ignore</span>
+                        </button>
+                    </div>
+                ) : currentStatus === "connected" ? (
+                    <button disabled className="flex min-w-[140px] items-center justify-center rounded-xl bg-secondary dark:bg-secondary-dark px-4 py-2 text-text dark:text-text-dark text-sm font-medium leading-normal transition-colors duration-300">
+                        <Users size={16} className="mr-2" />
+                        <span>Connected</span>
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleSendRequest}
+                        className="flex min-w-[140px] items-center justify-center rounded-xl bg-secondary dark:bg-secondary-dark px-4 py-2 text-text dark:text-text-dark text-sm font-medium leading-normal hover:bg-border dark:hover:bg-border-dark transition-colors duration-300"
+                    >
+                        <UserPlus size={16} className="mr-2" />
+                        <span>Connect</span>
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 };
+
 export default RecommendedUser;

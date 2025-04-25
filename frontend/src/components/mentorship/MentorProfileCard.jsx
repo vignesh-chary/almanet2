@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "../../lib/axios";
-import { UserCheck, ArrowRight } from "lucide-react";
+import { UserCheck, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import MentorshipRequestForm from "./MentorshipRequestForm";
 
 // Function to fetch mentorship request statuses
 const fetchRequestStatuses = async (mentorIds) => {
   const response = await axiosInstance.post("/mentorships/request-status/", { mentorIds });
-  return response.data; // Expected format: { mentorId1: "pending", mentorId2: "accepted", ... }
+  return response.data;
 };
 
 const MentorProfileCard = ({ mentor }) => {
@@ -16,7 +17,6 @@ const MentorProfileCard = ({ mentor }) => {
   const [selectedMentor, setSelectedMentor] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch request statuses using React Query
   const {
     data: requestStatus = {},
     isLoading,
@@ -24,16 +24,14 @@ const MentorProfileCard = ({ mentor }) => {
   } = useQuery({
     queryKey: ["mentorshipStatus", mentor._id],
     queryFn: () => fetchRequestStatuses([mentor._id]),
-    enabled: !!mentor._id, // Only fetch if mentor._id exists
+    enabled: !!mentor._id,
   });
 
-  // Mutation to handle mentorship request submission
-  const { mutate: requestMentorship } = useMutation({
-    mutationFn: async ({ mentorId, message }) => {
-      await axiosInstance.post("/mentorships/request", { mentorId, message });
+  const { mutate: requestMentorship, isLoading: isRequesting } = useMutation({
+    mutationFn: async ({ mentorId, message, mentorshipType, goals }) => {
+      await axiosInstance.post("/mentorships/request", { mentorId, message, mentorshipType, goals });
     },
     onMutate: async ({ mentorId }) => {
-      // Optimistic update: Set status to "pending" immediately
       await queryClient.cancelQueries(["mentorshipStatus", mentor._id]);
       const previousStatus = queryClient.getQueryData(["mentorshipStatus", mentor._id]);
       queryClient.setQueryData(["mentorshipStatus", mentor._id], (old) => ({
@@ -42,29 +40,30 @@ const MentorProfileCard = ({ mentor }) => {
       }));
       return { previousStatus };
     },
+    onSuccess: () => {
+      toast.success("Mentorship request sent successfully!");
+      queryClient.invalidateQueries(["mentorshipStatus"]);
+      queryClient.invalidateQueries(["acceptedMentors"]);
+    },
     onError: (err, variables, context) => {
-      // Revert to previous status on error
+      toast.error(err.response?.data?.message || "Failed to send mentorship request");
       queryClient.setQueryData(["mentorshipStatus", mentor._id], context.previousStatus);
-    },
-    onSettled: () => {
-      // Refetch statuses to ensure data is up-to-date
-      queryClient.invalidateQueries(["mentorshipStatus", mentor._id]);
-    },
+    }
   });
 
   const handleRequestMentorship = (mentorId) => {
-    setSelectedMentor(mentorId); // Open the mentorship request form
+    setSelectedMentor(mentorId);
   };
 
   return (
     <div
-      className="bg-white p-6 rounded-xl shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
+      className="bg-card dark:bg-card-dark p-4 rounded-xl border border-border dark:border-border-dark"
       onClick={() => navigate(`/profile/${mentor.userId.username}`)}
     >
       {/* Profile Image */}
       <div className="flex justify-center">
         <div
-          className="w-32 h-32 bg-cover bg-center rounded-full border-4 border-blue-100"
+          className="w-24 h-24 bg-cover bg-center rounded-full border-4 border-secondary dark:border-secondary-dark"
           style={{
             backgroundImage: `url(${
               mentor.userId.profilePicture ||
@@ -75,54 +74,61 @@ const MentorProfileCard = ({ mentor }) => {
       </div>
 
       {/* Mentor Info */}
-      <div className="text-center mt-4">
-        <p className="text-xl font-bold text-gray-900">{mentor.userId.name || "No Name"}</p>
-        <p className="text-gray-600 text-md mt-1">
+      <div className="text-center mt-3">
+        <p className="text-lg font-bold text-text dark:text-text-dark truncate">{mentor.userId.name || "No Name"}</p>
+        <p className="text-text-muted dark:text-text-dark-muted text-sm mt-1 truncate">
           <span className="font-semibold">Expertise:</span>{" "}
-          {mentor.expertise?.join(", ") || "Not specified"}
+          {mentor.expertise?.slice(0, 2).join(", ") || "Not specified"}
         </p>
-        <p className="text-gray-500 text-md">
+        <p className="text-text-muted dark:text-text-dark-muted text-sm truncate">
           <span className="font-semibold">Industry:</span> {mentor.industry || "Not specified"}
         </p>
 
         {/* Request Button */}
-        <div className="mt-4">
-          {requestStatus[mentor._id] ? (
+        <div className="mt-3">
+          {isLoading ? (
+            <button className="px-3 py-1.5 text-sm rounded-lg bg-secondary dark:bg-secondary-dark text-text dark:text-text-dark" disabled>
+              <Loader2 className="animate-spin" size={14} />
+            </button>
+          ) : requestStatus[mentor._id] ? (
             <button
-              className={`px-4 py-2 text-sm rounded-lg ${
+              className={`px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 justify-center ${
                 requestStatus[mentor._id] === "pending"
-                  ? "bg-yellow-500 text-white"
+                  ? "bg-accent/10 dark:bg-accent-dark/10 text-accent dark:text-accent-dark"
                   : requestStatus[mentor._id] === "accepted"
-                  ? "bg-green-500 text-white"
-                  : "bg-red-500 text-white"
+                  ? "bg-success/10 dark:bg-success-dark/10 text-success dark:text-success-dark"
+                  : "bg-error/10 dark:bg-error-dark/10 text-error dark:text-error-dark"
               }`}
               disabled
             >
+              {requestStatus[mentor._id] === "pending" && <Loader2 className="animate-spin" size={14} />}
               {requestStatus[mentor._id]}
             </button>
           ) : (
             <button
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary dark:bg-primary-dark text-white rounded-lg disabled:bg-secondary dark:disabled:bg-secondary-dark disabled:text-text-muted dark:disabled:text-text-dark-muted text-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRequestMentorship(mentor._id);
               }}
+              disabled={isRequesting}
             >
-              <UserCheck size={16} /> Request
+              {isRequesting ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
+              {isRequesting ? "Sending..." : "Request"}
             </button>
           )}
         </div>
 
         {/* View Profile Button */}
         <button
-          className="flex items-center gap-2 mt-4 text-blue-600 hover:text-blue-700 transition-colors"
+          className="flex items-center gap-1.5 mt-2 text-primary dark:text-primary-dark text-sm"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/profile/${mentor.userId.username}`);
           }}
         >
           <span>View Profile</span>
-          <ArrowRight size={16} />
+          <ArrowRight size={14} />
         </button>
       </div>
 

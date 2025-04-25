@@ -1,128 +1,318 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { axiosInstance } from "../../lib/axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Bell, Home, LogOut, User, Users, Lock, BookOpen } from "lucide-react";
-import SearchBar from '../SearchBar';
+import { useState, useEffect, useRef } from "react";
+import SearchBar from "../SearchBar";
+import { 
+    Settings, Bell, Home, Users, LogOut, 
+    User, BookOpen, Lock, Search, MoreHorizontal,
+    Sun, Moon
+} from "lucide-react";
+import { axiosInstance } from "../../lib/axios";
+import { useTheme } from "../../context/ThemeContext";
 
 const Navbar = () => {
-  const { data: authUser } = useQuery({ queryKey: ["authUser"] });
-  const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
+    const { isDarkMode, toggleTheme } = useTheme();
+    const { data: authUser } = useQuery({ queryKey: ["authUser"] });
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const searchRef = useRef(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { data: notifications } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: async () => axiosInstance.get("/notifications"),
-    enabled: !!authUser,
-  });
+    const { data: notifications } = useQuery({
+        queryKey: ["notifications"],
+        queryFn: async () => axiosInstance.get("/notifications"),
+        enabled: !!authUser,
+        initialData: { data: [] }
+    });
 
-  const { data: connectionRequests } = useQuery({
-    queryKey: ["connectionRequests"],
-    queryFn: async () => axiosInstance.get("/connections/requests"),
-    enabled: !!authUser,
-  });
+    const { data: connectionRequests } = useQuery({
+        queryKey: ["connectionRequests"],
+        queryFn: async () => axiosInstance.get("/connections/requests"),
+        enabled: !!authUser,
+        initialData: { data: [] }
+    });
 
-  const { mutate: logout } = useMutation({
-    mutationFn: () => axiosInstance.post("/auth/logout"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["authUser"] });
-    },
-  });
+    const unreadNotificationCount = notifications?.data?.filter((notif) => !notif.read)?.length || 0;
+    const unreadConnectionRequestsCount = connectionRequests?.data?.length || 0;
 
-  const unreadNotificationCount = notifications?.data.filter((notif) => !notif.read).length;
-  const unreadConnectionRequestsCount = connectionRequests?.data?.length;
+    const { mutate: logout } = useMutation({
+        mutationFn: () => axiosInstance.post("/auth/logout"),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["authUser"] });
+        },
+    });
 
-  return (
-    <nav className="bg-secondary shadow-md sticky top-0 z-10">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center py-3">
-          
-          {/* Left Side - Logo and Search */}
-          <div className="flex items-center space-x-4">
-            <Link to="/" className="text-2xl font-bold text-primary">
-              Almanet
-            </Link>
-            {authUser && <SearchBar />} {/* Integrated Search Bar */}
-          </div>
+    // Close search bar when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setIsSearchOpen(false);
+            }
+        };
 
-          {/* Right Side - Navigation Links */}
-          <div className="flex items-center gap-2 md:gap-6">
-            {authUser ? (
-              <>
-                <Link to="/" className="text-neutral flex flex-col items-center hover:text-primary transition-colors">
-                  <Home size={20} />
-                  <span className="text-xs hidden md:block">Home</span>
-                </Link>
+        if (isSearchOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
 
-                <Link to="/network" className="text-neutral flex flex-col items-center hover:text-primary transition-colors relative">
-                  <Users size={20} />
-                  <span className="text-xs hidden md:block">My Network</span>
-                  {unreadConnectionRequestsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center">
-                      {unreadConnectionRequestsCount}
-                    </span>
-                  )}
-                </Link>
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isSearchOpen]);
 
-                {/* Mentorship Button - Hidden for Admin Users */}
-                {authUser.role !== 'admin' && (
-                  <Link
-                    to={authUser.role === "alumni" ? "/alumni-mentorship-home" : "/student-mentorship-home"}
-                    className="text-neutral flex flex-col items-center hover:text-primary transition-colors"
-                  >
-                    <BookOpen size={20} />
-                    <span className="text-xs hidden md:block">Mentorship</span>
-                  </Link>
-                )}
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutsideMenu = (event) => {
+            if (isMenuOpen && !event.target.closest(".menu-container")) {
+                setIsMenuOpen(false);
+            }
+        };
 
-                <Link to="/notifications" className="text-neutral flex flex-col items-center hover:text-primary transition-colors relative">
-                  <Bell size={20} />
-                  <span className="text-xs hidden md:block">Notifications</span>
-                  {unreadNotificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center">
-                      {unreadNotificationCount}
-                    </span>
-                  )}
-                </Link>
+        if (isMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutsideMenu);
+        }
 
-                <Link to={`/profile/${authUser.username}`} className="text-neutral flex flex-col items-center hover:text-primary transition-colors">
-                  <User size={20} />
-                  <span className="text-xs hidden md:block">Me</span>
-                </Link>
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutsideMenu);
+        };
+    }, [isMenuOpen]);
 
-                {/* Admin Dashboard Link */}
-                {authUser.role === "admin" && (
-                  <Link
-                    to="/admin"
-                    className="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 rounded-md font-medium transition duration-300 ease-in-out flex items-center"
-                  >
-                    <Lock className="inline-block mr-1" size={18} />
-                    <span className="hidden sm:inline">Dashboard</span>
-                  </Link>
-                )}
+    return (
+        <nav className="bg-white dark:bg-background-dark border-b border-muted dark:border-border-dark sticky top-0 z-50 font-sans transition-colors duration-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16 relative">
 
-                {/* Logout Button */}
-                <button
-                  className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-800"
-                  onClick={() => logout()}
-                >
-                  <LogOut size={20} />
-                  <span className="hidden md:inline">Logout</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="btn btn-ghost">
-                  Sign In
-                </Link>
-                <Link to="/signup" className="btn btn-primary">
-                  Join now
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
+                    {/* Logo & Search */}
+                    <div className="flex items-center gap-3 flex-1">
+                        <Link to="/" className="text-text dark:text-text-dark font-bold text-xl tracking-tight">
+                            Almanet
+                        </Link>
+
+                        {/* Mobile Search (Full Width) */}
+                        {authUser && (
+                            <div className="relative lg:hidden flex-1" ref={searchRef}>
+                                {isSearchOpen ? (
+                                    <div className="absolute left-2 right-2 top-0 h-full flex items-center">
+                                        <SearchBar fullWidth={true} />
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setIsSearchOpen(true)}
+                                        className="p-2 rounded-full bg-secondary text-dark"
+                                    >
+                                        <Search size={20} />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Desktop Search Bar */}
+                        {authUser && (
+                            <div className="hidden lg:flex items-center h-10 pl-3 w-64">
+                                <SearchBar fullWidth={false} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Side Icons (Hide when Search is Active) */}
+                    {!isSearchOpen && (
+                        <div className="flex items-center gap-4 md:gap-6 menu-container">
+                            {authUser ? (
+                                <div className="flex items-center gap-4 md:gap-6">
+                                    <div className="lg:flex items-center hidden justify-end space-x-6">
+                                        <Link to="/" className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Home className="text-text dark:text-text-dark" size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Home</span>
+                                        </Link>
+
+                                        <Link to="/network" className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5 relative">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Users className="text-text dark:text-text-dark" size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Network</span>
+                                            {unreadConnectionRequestsCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full size-4 flex items-center justify-center">
+                                                    {unreadConnectionRequestsCount}
+                                                </span>
+                                            )}
+                                        </Link>
+
+                                        {authUser.role === "admin" && (
+                                            <Link
+                                                to="/admin"
+                                                className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5"
+                                            >
+                                                <div className="flex items-center justify-center h-10 w-10">
+                                                    <Lock className="text-text dark:text-text-dark" size={20} />
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Admin</span>
+                                            </Link>
+                                        )}
+
+                                        {authUser.role !== "admin" && (
+                                            <Link 
+                                                to={authUser.role === "alumni" ? "/alumni-mentorship-home" : "/my-mentors"}
+                                                className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5">
+                                                <div className="flex items-center justify-center h-10 w-10">
+                                                    <BookOpen className="text-text dark:text-text-dark" size={20} />
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Mentorship</span>
+                                            </Link>
+                                        )}
+
+                                        <Link to="/notifications" className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5 relative">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Bell className="text-text dark:text-text-dark" size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer text-text dark:text-text-dark">Notifications</span>
+                                            {unreadNotificationCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full size-4 flex items-center justify-center">
+                                                    {unreadNotificationCount}
+                                                </span>
+                                            )}
+                                        </Link>
+
+                                        <Link
+                                            to={`/profile/${authUser.username}`}
+                                            className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5"
+                                        >
+                                            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-cover bg-center"
+                                                style={{ backgroundImage: `url(${authUser.profilePicture || '/avatar.png'})` }}
+                                            >
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Profile</span>
+                                        </Link>
+                                        <button
+                                            onClick={toggleTheme}
+                                            className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5"
+                                        >
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Theme</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => logout()} 
+                                            className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5"
+                                        >
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <LogOut size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Logout</span>
+                                        </button>
+                                        <Link to="/settings" className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Settings size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Settings</span>
+                                        </Link>
+                                    </div>
+                                    <div className="lg:hidden flex gap-3 items-center">
+                                         <Link to="/" className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Home className="text-text dark:text-text-dark" size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Home</span>
+                                        </Link>
+
+                                        <Link to="/network" className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5 relative">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Users className="text-text dark:text-text-dark" size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Network</span>
+                                            {unreadConnectionRequestsCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full size-4 flex items-center justify-center">
+                                                    {unreadConnectionRequestsCount}
+                                                </span>
+                                            )}
+                                        </Link>
+
+                                        {authUser.role === "admin" && (
+                                            <Link
+                                                to="/admin"
+                                                className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5"
+                                            >
+                                                <div className="flex items-center justify-center h-10 w-10">
+                                                    <Lock className="text-text dark:text-text-dark" size={20} />
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Admin</span>
+                                            </Link>
+                                        )}
+
+                                        {authUser.role !== "admin" && (
+                                            <Link 
+                                                to={authUser.role === "alumni" ? "/alumni-mentorship-home" : "/my-mentors"}
+                                                className="text-text dark:text-text-dark hover:text-accent dark:hover:text-accent-dark transition-colors flex flex-col items-center gap-0.5">
+                                                <div className="flex items-center justify-center h-10 w-10">
+                                                    <BookOpen className="text-text dark:text-text-dark" size={20} />
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Mentorship</span>
+                                            </Link>
+                                        )}
+
+                                        <Link to="/notifications" className="text-dark hover:text-accent transition-colors flex flex-col items-center gap-0.5 relative">
+                                            <div className="flex items-center justify-center h-10 w-10">
+                                                <Bell className="text-text dark:text-text-dark" size={20} />
+                                            </div>
+                                            <span className="text-xs cursor-pointer">Notifications</span>
+                                            {unreadNotificationCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full size-4 flex items-center justify-center">
+                                                    {unreadNotificationCount}
+                                                </span>
+                                            )}
+                                        </Link>
+
+                                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-dark hover:text-accent transition-colors">
+                                            <MoreHorizontal size={20} />
+                                        </button>
+                                    </div>
+                                    {isMenuOpen && (
+                                        <div className="absolute top-16 right-0 bg-white rounded-md shadow-md p-2 z-50 flex gap-3">
+                                            <Link
+                                                to={`/profile/${authUser.username}`}
+                                                className="flex flex-col items-center gap-0.5"
+                                            >
+                                                <div className="h-8 w-8 rounded-full bg-cover bg-center"
+                                                    style={{ backgroundImage: `url(${authUser.profilePicture || '/avatar.png'})` }}
+                                                >
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Profile</span>
+                                            </Link>
+                                            <button 
+                                                onClick={() => logout()} 
+                                                className="flex flex-col items-center gap-0.5"
+                                            >
+                                                <div className="p-2 rounded-full hover:bg-gray-100">
+                                                    <LogOut size={20} />
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Logout</span>
+                                            </button>
+                                            <Link to="/settings" className="flex flex-col items-center gap-0.5">
+                                                <div className="p-2 rounded-full hover:bg-gray-100">
+                                                    <Settings size={20} />
+                                                </div>
+                                                <span className="text-xs cursor-pointer">Settings</span>
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-4">
+                                    <Link to="/login" className="text-dark hover:text-accent transition-colors px-4 py-2">
+                                        Sign In
+                                    </Link>
+                                    <Link to="/signup" className="bg-primary text-white px-6 py-2 rounded-full hover:bg-[#01794d] transition-colors">
+                                        Join Now
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </nav>
+    );
 };
 
 export default Navbar;

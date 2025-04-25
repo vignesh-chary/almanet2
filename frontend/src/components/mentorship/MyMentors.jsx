@@ -2,110 +2,213 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "../../lib/axios";
-import { Target, MessageCircle, Calendar } from "lucide-react";
+import { Target, MessageCircle, Calendar, Loader2, UserX } from "lucide-react";
+import ChatBox from "../ChatBox";
+import MentorCard from './MentorCard';
 
 const fetchAcceptedMentors = async () => {
   const { data } = await axiosInstance.get("/mentorships/my-mentors");
   return data;
 };
 
+const getRecommendedMentors = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/recommendations/${userId}/recommended-mentors`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching recommended mentors:", error.response?.data || error.message);
+    throw new Error("Failed to fetch recommended mentors");
+  }
+};
+
 const MyMentorsPage = () => {
   const navigate = useNavigate();
   const { data: authUser } = useQuery({ queryKey: ["authUser"] });
   const [mentorshipId, setMentorshipId] = useState(null);
+  const [selectedMentor, setSelectedMentor] = useState(null);
 
-  const { data: mentors, isLoading, isError } = useQuery({
+  const { 
+    data: mentors = [], 
+    isLoading: mentorsLoading, 
+    isError: mentorsError 
+  } = useQuery({
     queryKey: ["acceptedMentors"],
     queryFn: fetchAcceptedMentors,
   });
 
-  if (isLoading) return <p className="text-center mt-10">Loading mentors...</p>;
-  if (isError) return <p className="text-center mt-10 text-red-500">Error fetching mentors.</p>;
+  const { 
+    data: recommendedMentors = [], 
+    isLoading: recommendedLoading, 
+    error: recommendedError 
+  } = useQuery({
+    queryKey: ['recommendedMentors'],
+    queryFn: async () => {
+      const userId = authUser?._id;
+      if (!userId) return [];
+      return await getRecommendedMentors(userId);
+    },
+    enabled: !!authUser?._id,
+  });
+
+  const handleMessageClick = (mentor) => {
+    setSelectedMentor(mentor);
+  };
 
   const handleViewGoals = async (mentorId) => {
-    if (!authUser || !authUser._id) {
-      console.error("User is not defined");
-      return;
-    }
+    if (!authUser?._id) return;
 
     try {
       const { data } = await axiosInstance.get(
         `/mentorships/find?mentor=${mentorId}&mentee=${authUser._id}`
       );
       if (data?.mentorshipId) {
-        setMentorshipId(data.mentorshipId);
         navigate(`/mentorships/${data.mentorshipId}/goals`);
-      } else {
-        console.error("Mentorship ID not found.");
       }
     } catch (error) {
       console.error("Error fetching mentorship ID:", error);
     }
   };
 
+  if (mentorsLoading || recommendedLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 className="animate-spin text-primary dark:text-primary-dark" size={32} />
+      </div>
+    );
+  }
+
+  if (mentorsError || recommendedError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-4">
+        <UserX className="text-error dark:text-error-dark mb-4" size={40} />
+        <h3 className="text-xl font-semibold mb-2 text-text dark:text-text-dark">Error Loading Mentors</h3>
+        <p className="text-text-muted dark:text-text-dark-muted mb-4 max-w-md">
+          We couldn't load your mentors. Please check your connection and try again.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-primary dark:bg-primary-dark text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary-dark/90 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative flex min-h-screen flex-col bg-slate-50 font-manrope">
-      <div className="layout-container flex flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between border-b border-gray-300 px-6 py-4 bg-white shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-800">My Mentors</h2>
-        </header>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-text dark:text-text-dark mb-2">My Mentors</h1>
+        <p className="text-text-muted dark:text-text-dark-muted">
+          Connect with your mentors and track your progress
+        </p>
+      </div>
 
-        {/* Content */}
-        <div className="px-8 py-6 flex flex-col items-center">
-          <div className="w-full max-w-3xl">
-            <p className="text-2xl font-semibold text-gray-900 mb-6">Your Mentors</p>
+      {/* Current Mentors */}
+      <section className="mb-12">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-text dark:text-text-dark">Current Mentors</h2>
+          <Link
+            to="/find-mentor"
+            className="flex items-center gap-2 text-primary dark:text-primary-dark hover:text-primary/80 dark:hover:text-primary-dark/80 transition"
+          >
+            <span>Find New Mentor</span>
+          </Link>
+        </div>
 
-            {mentors?.map((mentor, index) => (
-              <div
-                key={mentor.mentorId || `mentor-${index}`}
-                className="flex flex-col md:flex-row items-center bg-white shadow-md rounded-lg overflow-hidden mb-6 p-4"
-              >
-                {/* Mentor Image */}
-                <div
-                  className="w-24 h-24 md:w-32 md:h-32 bg-cover bg-center rounded-full"
-                  style={{
-                    backgroundImage: `url(${mentor.profilePicture || "https://cdn.usegalileo.ai/sdxl10/3bcb4a13-a797-4480-b43d-dfe101c8ef09.png"})`,
-                  }}
-                ></div>
-
-                {/* Mentor Details */}
-                <div className="flex-1 ml-4 mt-3 md:mt-0">
-                  <p className="text-sm text-gray-600">{mentor.industry || "No Industry"}</p>
-                  <p className="text-lg font-bold text-gray-900">{mentor.name}</p>
-                  <p className="text-sm text-gray-600">
-                    Expertise: {mentor.expertise?.join(", ") || "Not specified"}
+        {mentors.length === 0 ? (
+          <div className="bg-card dark:bg-card-dark rounded-xl p-8 text-center border border-border dark:border-border-dark shadow-sm">
+            <UserX className="mx-auto text-text-muted dark:text-text-dark-muted mb-4" size={48} />
+            <h3 className="text-lg font-medium text-text dark:text-text-dark mb-2">No Mentors Found</h3>
+            <p className="text-text-muted dark:text-text-dark-muted mb-6">
+              You haven't connected with any mentors yet.
+            </p>
+            <Link
+              to="/find-mentor"
+              className="inline-flex items-center px-6 py-2 bg-primary dark:bg-primary-dark text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary-dark/90 transition"
+            >
+              Browse Mentors
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mentors.map((mentor) => (
+              <div key={mentor.mentorId} className="bg-card dark:bg-card-dark rounded-xl border border-border dark:border-border-dark shadow-sm overflow-hidden">
+                <div className="p-5">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 rounded-full bg-secondary dark:bg-secondary-dark overflow-hidden">
+                      <img 
+                        src={mentor.profilePicture || "https://cdn.usegalileo.ai/sdxl10/3bcb4a13-a797-4480-b43d-dfe101c8ef09.png"} 
+                        alt={mentor.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-text dark:text-text-dark">{mentor.name}</h3>
+                      <p className="text-sm text-primary dark:text-primary-dark">{mentor.industry || "No Industry"}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-text-muted dark:text-text-dark-muted mb-4">
+                    {mentor.expertise?.slice(0, 3).join(", ") || "No expertise listed"}
                   </p>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 mt-4">
+                  <div className="flex gap-2">
+                    <Link
+                      to={`/messages`}
+                      className="flex-1 py-2 bg-primary dark:bg-primary-dark text-white rounded-lg text-sm font-medium hover:bg-primary/90 dark:hover:bg-primary-dark/90 transition flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle size={16} />
+                      Message
+                    </Link>
                     <button
                       onClick={() => handleViewGoals(mentor.mentorId)}
-                      className="flex items-center gap-2 bg-blue-500 text-white px-3 py-1.5 rounded-md text-sm shadow hover:bg-blue-600 transition"
+                      className="flex-1 py-2 bg-secondary dark:bg-secondary-dark text-text dark:text-text-dark rounded-lg text-sm font-medium hover:bg-secondary/80 dark:hover:bg-secondary-dark/80 transition flex items-center justify-center gap-2"
                     >
                       <Target size={16} />
-                      <span>View Goals</span>
+                      Goals
                     </button>
-
-                    <button className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm shadow hover:bg-gray-300 transition">
-                      <MessageCircle size={16} />
-                      <span>Message</span>
-                    </button>
-
                     <Link
                       to={`/schedule/${mentor.mentorId}`}
-                      className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm shadow hover:bg-gray-300 transition"
+                      className="flex-1 py-2 bg-primary dark:bg-primary-dark text-white rounded-lg text-sm font-medium hover:bg-primary/90 dark:hover:bg-primary-dark/90 transition flex items-center justify-center gap-2"
                     >
                       <Calendar size={16} />
-                      <span>Schedule</span>
+                      Schedule
                     </Link>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        )}
+      </section>
+
+      {/* Recommended Mentors */}
+      {recommendedMentors.length > 0 && (
+        <section className="mb-12">
+          <h2 className="text-xl font-semibold text-text dark:text-text-dark mb-6">Recommended For You</h2>
+          <div className="overflow-x-auto pb-4">
+            <div className="flex gap-6">
+              {recommendedMentors.map((mentor) => (
+                <MentorCard 
+                  key={mentor._id} 
+                  mentor={mentor} 
+                  className="min-w-[280px]"
+                  isRecommended={true}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Chat Modal */}
+      {selectedMentor && (
+        <ChatBox
+          initialUserId={selectedMentor.mentorId}
+          initialUserName={selectedMentor.name}
+          initialUserAvatar={selectedMentor.profilePicture}
+          onClose={() => setSelectedMentor(null)}
+        />
+      )}
     </div>
   );
 };

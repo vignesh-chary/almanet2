@@ -9,7 +9,8 @@ import {
   getAlumniJobs,
   updateApplicationStatus,
   getAppliedJobs,
-  getJobApplicants
+  getJobApplicants,
+  getJobRecommendations
 } from "../controllers/job.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { alumniRoute } from "../middleware/alumni.middleware.js";
@@ -22,6 +23,7 @@ router.get('/my-jobs', protectRoute, alumniRoute, getAlumniJobs);
 // General job routes
 router.post('/', protectRoute, alumniRoute, createJob);
 router.get('/', protectRoute, getAllJobs);
+router.get('/recommendations', protectRoute, getJobRecommendations);
 
 // Applied jobs route (should be before /:jobId)
 router.get("/applied", protectRoute, getAppliedJobs);

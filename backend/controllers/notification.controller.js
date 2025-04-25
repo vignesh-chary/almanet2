@@ -5,7 +5,8 @@ export const getUserNotifications = async (req, res) => {
 		const notifications = await Notification.find({ recipient: req.user._id })
 			.sort({ createdAt: -1 })
 			.populate("relatedUser", "name username profilePicture")
-			.populate("relatedPost", "content image");
+			.populate("relatedPost", "content image")
+			.lean();
 
 		res.status(200).json(notifications);
 	} catch (error) {
@@ -21,7 +22,10 @@ export const markNotificationAsRead = async (req, res) => {
 			{ _id: notificationId, recipient: req.user._id },
 			{ read: true },
 			{ new: true }
-		);
+		)
+		.populate("relatedUser", "name username profilePicture")
+		.populate("relatedPost", "content image")
+		.lean();
 
 		res.json(notification);
 	} catch (error) {

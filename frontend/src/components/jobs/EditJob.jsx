@@ -1,159 +1,300 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { axiosInstance } from "../../lib/axios";
+import { useTheme } from "../../context/ThemeContext";
 
 const EditJob = () => {
-  const { jobId } = useParams(); // Job ID from the route
-  const [jobData, setJobData] = useState({}); // State for job details
-  const [isLoading, setIsLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error handling
-  const navigate = useNavigate(); // Hook for navigation
+  const { jobId } = useParams();
+  const [jobData, setJobData] = useState({
+    title: "",
+    description: "",
+    location: "",
+    jobType: "Full-Time",
+    experienceLevel: "Entry",
+    position: "",
+    salary: 0,
+    requirements: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
 
-  // Fetch job details on component mount
+  const jobTypes = ["Full-Time", "Part-Time", "Contract", "Internship"];
+  const experienceLevels = ["Entry", "Mid", "Senior"];
+
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const response = await axiosInstance.get(`/jobs/${jobId}`); // Fetch job details
-        setJobData(response.data); // Set the job data
+        const response = await axiosInstance.get(`/jobs/${jobId}`);
+        const data = response.data;
+        
+        // Ensure all required fields have values
+        setJobData({
+          title: data.title || "",
+          description: data.description || "",
+          location: data.location || "",
+          jobType: data.jobType || "Full-Time",
+          experienceLevel: data.experienceLevel || "Entry",
+          position: data.position || "",
+          salary: data.salary || 0,
+          requirements: Array.isArray(data.requirements) ? data.requirements : []
+        });
       } catch (err) {
         setError("Failed to fetch job details.");
         console.error("Error fetching job:", err);
       } finally {
-        setIsLoading(false); // Stop loading once the fetch is complete
+        setIsLoading(false);
       }
     };
 
     fetchJob();
   }, [jobId]);
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.put(`/jobs/${jobId}`, jobData); // Update job
-      navigate("/job-dashboard"); // Redirect to the dashboard
+      // Ensure all required fields are present and properly formatted
+      const dataToSend = {
+        ...jobData,
+        salary: Number(jobData.salary) || 0,
+        jobType: jobData.jobType || "Full-Time",
+        experienceLevel: jobData.experienceLevel || "Entry",
+        requirements: Array.isArray(jobData.requirements) ? jobData.requirements : []
+      };
+
+      console.log("Sending data:", dataToSend); // Debug log
+
+      await axiosInstance.put(`/jobs/${jobId}`, dataToSend);
+      navigate("/job-dashboard");
     } catch (err) {
       console.error("Error updating job:", err);
       setError("Failed to update the job. Please try again.");
     }
   };
 
-  // Show loading indicator
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-500 text-lg">Loading job details...</p>
+      <div className={`flex justify-center items-center min-h-screen ${
+        isDarkMode ? 'bg-background-dark' : 'bg-background'
+      }`}>
+        <div className={`w-8 h-8 border-4 ${
+          isDarkMode ? 'border-primary-dark' : 'border-primary'
+        } border-dotted rounded-full animate-spin`}></div>
       </div>
     );
   }
 
-  // Show error message if there's an error
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500 text-lg">{error}</p>
+      <div className={`p-6 ${
+        isDarkMode ? 'bg-background-dark text-text-dark' : 'bg-background text-text'
+      }`}>
+        <p className="text-error">{error}</p>
       </div>
     );
   }
 
-  // Render the form
   return (
-    <div className="p-8 bg-gray-100 min-h-screen flex items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl"
-      >
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Edit Job</h1>
+    <div className={`min-h-screen p-4 sm:p-8 ${
+      isDarkMode ? 'bg-background-dark' : 'bg-background'
+    }`}>
+      <div className="max-w-2xl mx-auto">
+        <h1 className={`text-2xl font-bold mb-6 ${
+          isDarkMode ? 'text-text-dark' : 'text-text'
+        }`}>
+          Edit Job
+        </h1>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Job Title</label>
-          <input
-            type="text"
-            placeholder="Enter Job Title"
-            value={jobData.title || ""}
-            onChange={(e) => setJobData({ ...jobData, title: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Job Description</label>
-          <textarea
-            placeholder="Enter Job Description"
-            value={jobData.description || ""}
-            onChange={(e) =>
-              setJobData({ ...jobData, description: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Location</label>
-          <input
-            type="text"
-            placeholder="Enter Location"
-            value={jobData.location || ""}
-            onChange={(e) => setJobData({ ...jobData, location: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Job Type</label>
-          <input
-            type="text"
-            placeholder="Enter Job Type"
-            value={jobData.jobType || ""}
-            onChange={(e) => setJobData({ ...jobData, jobType: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Experience Level</label>
-          <input
-            type="text"
-            placeholder="Enter Experience Level"
-            value={jobData.experienceLevel || ""}
-            onChange={(e) =>
-              setJobData({ ...jobData, experienceLevel: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Position</label>
-          <input
-            type="text"
-            placeholder="Enter Position"
-            value={jobData.position || ""}
-            onChange={(e) => setJobData({ ...jobData, position: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Requirements</label>
-          <textarea
-            placeholder="Enter Requirements"
-            value={jobData.requirements || ""}
-            onChange={(e) =>
-              setJobData({ ...jobData, requirements: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
+        <form
+          onSubmit={handleSubmit}
+          className={`p-6 rounded-xl ${
+            isDarkMode ? 'bg-background-dark' : 'bg-background'
+          }`}
         >
-          Update Job
-        </button>
-      </form>
+          <div className="space-y-4">
+            <div>
+              <label className={`block mb-2 ${
+                isDarkMode ? 'text-text-dark' : 'text-text'
+              }`}>
+                Job Title
+              </label>
+              <input
+                type="text"
+                value={jobData.title}
+                onChange={(e) => setJobData({ ...jobData, title: e.target.value })}
+                className={`w-full p-3 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                    : 'bg-white border-border text-text placeholder-text-muted'
+                } focus:outline-none focus:ring-2 focus:ring-primary`}
+                required
+              />
+            </div>
+
+            <div>
+              <label className={`block mb-2 ${
+                isDarkMode ? 'text-text-dark' : 'text-text'
+              }`}>
+                Description
+              </label>
+              <textarea
+                value={jobData.description}
+                onChange={(e) => setJobData({ ...jobData, description: e.target.value })}
+                className={`w-full p-3 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                    : 'bg-white border-border text-text placeholder-text-muted'
+                } focus:outline-none focus:ring-2 focus:ring-primary`}
+                rows="4"
+                required
+              />
+            </div>
+
+            <div>
+              <label className={`block mb-2 ${
+                isDarkMode ? 'text-text-dark' : 'text-text'
+              }`}>
+                Location
+              </label>
+              <input
+                type="text"
+                value={jobData.location}
+                onChange={(e) => setJobData({ ...jobData, location: e.target.value })}
+                className={`w-full p-3 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                    : 'bg-white border-border text-text placeholder-text-muted'
+                } focus:outline-none focus:ring-2 focus:ring-primary`}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={`block mb-2 ${
+                  isDarkMode ? 'text-text-dark' : 'text-text'
+                }`}>
+                  Job Type
+                </label>
+                <select
+                  value={jobData.jobType}
+                  onChange={(e) => setJobData({ ...jobData, jobType: e.target.value })}
+                  className={`w-full p-3 rounded-lg border ${
+                    isDarkMode
+                      ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                      : 'bg-white border-border text-text placeholder-text-muted'
+                  } focus:outline-none focus:ring-2 focus:ring-primary`}
+                  required
+                >
+                  {jobTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={`block mb-2 ${
+                  isDarkMode ? 'text-text-dark' : 'text-text'
+                }`}>
+                  Experience Level
+                </label>
+                <select
+                  value={jobData.experienceLevel}
+                  onChange={(e) => setJobData({ ...jobData, experienceLevel: e.target.value })}
+                  className={`w-full p-3 rounded-lg border ${
+                    isDarkMode
+                      ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                      : 'bg-white border-border text-text placeholder-text-muted'
+                  } focus:outline-none focus:ring-2 focus:ring-primary`}
+                  required
+                >
+                  {experienceLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className={`block mb-2 ${
+                isDarkMode ? 'text-text-dark' : 'text-text'
+              }`}>
+                Position
+              </label>
+              <input
+                type="text"
+                value={jobData.position}
+                onChange={(e) => setJobData({ ...jobData, position: e.target.value })}
+                className={`w-full p-3 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                    : 'bg-white border-border text-text placeholder-text-muted'
+                } focus:outline-none focus:ring-2 focus:ring-primary`}
+                required
+              />
+            </div>
+
+            <div>
+              <label className={`block mb-2 ${
+                isDarkMode ? 'text-text-dark' : 'text-text'
+              }`}>
+                Salary
+              </label>
+              <input
+                type="number"
+                value={jobData.salary}
+                onChange={(e) => setJobData({ ...jobData, salary: e.target.value })}
+                className={`w-full p-3 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                    : 'bg-white border-border text-text placeholder-text-muted'
+                } focus:outline-none focus:ring-2 focus:ring-primary`}
+                required
+                min="0"
+                step="1000"
+              />
+            </div>
+
+            <div>
+              <label className={`block mb-2 ${
+                isDarkMode ? 'text-text-dark' : 'text-text'
+              }`}>
+                Requirements
+              </label>
+              <textarea
+                value={jobData.requirements.join('\n')}
+                onChange={(e) => setJobData({ 
+                  ...jobData, 
+                  requirements: e.target.value.split('\n').filter(req => req.trim())
+                })}
+                className={`w-full p-3 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted'
+                    : 'bg-white border-border text-text placeholder-text-muted'
+                } focus:outline-none focus:ring-2 focus:ring-primary`}
+                rows="4"
+                placeholder="Enter each requirement on a new line"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className={`w-full py-3 px-6 rounded-lg font-medium ${
+                isDarkMode
+                  ? 'bg-primary-dark text-white'
+                  : 'bg-primary text-white'
+              }`}
+            >
+              Update Job
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

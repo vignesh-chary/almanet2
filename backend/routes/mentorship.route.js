@@ -4,9 +4,9 @@ import {
   registerMentorship,
   getMentorshipRequests,
   updateMentorshipStatus,
-  getMentors,getMentorStatus,getMenteeCount,getRequestCount,getMentorshipRequestStatus,getAcceptedMentors,getGoals,addGoal,deleteGoal,getmentorshipId,
-  addSubgoal,toggleSubgoal,deleteSubGoal,getUserRoleAndData,markGoalAsCompleted,markSubgoalAsCompleted,getGoalProgress,getMentorMentees,
-  findMentorIdByUserId,getMentorAvailability, scheduleMeeting, getMyMeetings
+  getMentors, getMentorStatus, getMenteeCount, getRequestCount, getMentorshipRequestStatus, getAcceptedMentors, getGoals, addGoal, deleteGoal, getmentorshipId,
+  addSubgoal, toggleSubgoal, deleteSubGoal, getUserRoleAndData, markGoalAsCompleted, markSubgoalAsCompleted, getGoalProgress, getMentorMentees,
+  findMentorIdByUserId, getMentorAvailability, scheduleMeeting, getMyMeetings, getStats, getMentorDashboardStats
   // updateRequestStatus
 } from "../controllers/mentorship.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
@@ -14,9 +14,8 @@ import { alumniRoute } from "../middleware/alumni.middleware.js";
 
 const router = express.Router();
 
-
-
-router.get("/mentors", protectRoute,getMentors);
+router.get("/stats", getStats);
+router.get("/mentors", protectRoute, getMentors);
 router.get('/find/:userId', findMentorIdByUserId);
 
 
@@ -26,7 +25,7 @@ router.get("/mentees", protectRoute, getMentorMentees);
 router.post("/request-status", protectRoute, getMentorshipRequestStatus);
 
 
-router.get("/mentor-status", protectRoute,getMentorStatus);
+router.get("/mentor-status", protectRoute, getMentorStatus);
 
 
 // Mentee requests mentorship
@@ -71,10 +70,11 @@ router.get("/goals/:goalId/progress", protectRoute, getGoalProgress);
 
 
 
-router.get("/mentor/:mentorId/availability",protectRoute, getMentorAvailability);
-router.post("/schedule", protectRoute,scheduleMeeting);
+router.get("/mentor/:mentorId/availability", protectRoute, getMentorAvailability);
+router.post("/schedule", protectRoute, scheduleMeeting);
 router.get("/meetings/:userId", protectRoute, getMyMeetings);
 
-
+// Add new route for mentor dashboard stats
+router.get("/dashboard-stats", protectRoute, alumniRoute, getMentorDashboardStats);
 
 export default router;

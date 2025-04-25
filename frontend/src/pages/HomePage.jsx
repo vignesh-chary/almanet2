@@ -4,57 +4,12 @@ import Sidebar from "../components/Sidebar";
 import PostCreation from "../components/PostCreation";
 import Post from "../components/Post";
 import { Users } from "lucide-react";
-import RecommendedUser from "../components/RecommendedUser";
 import Cookies from "js-cookie";
 
 const HomePage = () => {
-    // Fetch authenticated user
     const { data: authUser } = useQuery({ queryKey: ["authUser"] });
-
     const token = Cookies.get("jwt-linkedin");
 
-    // Fetch recommended users
-    const { data: recommendedUsers, isLoading, isError } = useQuery({
-        queryKey: ["recommendedUsers", authUser?._id],
-        queryFn: async () => {
-            if (!token) throw new Error("No token found");
-
-            const res = await axiosInstance.get(`/recommendations/${authUser._id}/recommendations`, {
-                headers: { Authorization: `Bearer ${token}` },
-                withCredentials: true,
-            });
-            // console.log("Recommended Users:", res.data);
-            if (res.data && Array.isArray(res.data)) {
-                // Detailed inspection of each user in the array
-                res.data.forEach((user, index) => {
-                    // console.log(`Recommended User [${index}]:`, user); // Log each user object
-                    if (!user._id) {
-                        console.error(`Error: User at index ${index} missing _id:`, user);
-                    }
-                });
-            } else {
-                console.error("Error: Recommended Users data is not an array:", res.data);
-            }
-
-            return res.data;
-        },
-        enabled: !!authUser?._id && !!token,
-        retry: false,
-        // onSuccess: (data) => {
-        //     console.log("Recommended Users Query Success:", data);
-        //     if (data && Array.isArray(data)) {
-        //         // Check data after query success
-        //         data.forEach((user, index) => {
-        //             console.log(`Success - Recommended User [${index}]:`, user);
-        //         });
-        //     }
-        // },
-        // onError: (error) => {
-        //     console.error("Recommended Users Query Error:", error);
-        // },
-    });
-
-    // Fetch posts
     const { data: posts } = useQuery({
         queryKey: ["posts"],
         queryFn: async () => {
@@ -64,66 +19,40 @@ const HomePage = () => {
     });
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
-            <div className="hidden lg:block lg:col-span-1">
-                <Sidebar user={authUser} />
+        <div className="relative flex min-h-screen bg-white dark:bg-background-dark overflow-x-hidden" 
+             style={{ fontFamily: "'Be Vietnam Pro', 'Noto Sans', sans-serif" }}>
+            
+            {/* Fixed Sidebar - Hidden on mobile, shown on lg screens */}
+            <div className="hidden lg:block fixed left-0 top-0 h-screen w-80 border-r border-[#E9DFCE] dark:border-border-dark">
+                <Sidebar />
             </div>
 
-            {/* Main Feed */}
-            <div className="col-span-1 lg:col-span-2 order-first lg:order-none">
-                <PostCreation user={authUser} />
-
-                {/* Display posts */}
-                {posts?.map((post) => (
-                    <Post key={post._id} post={post} />
-                ))}
-
-                {/* No posts message */}
-                {posts?.length === 0 && (
-                    <div className="bg-white rounded-lg shadow p-8 text-center">
-                        <div className="mb-6">
-                            <Users size={64} className="mx-auto text-blue-500" />
-                        </div>
-                        <h2 className="text-2xl font-bold mb-4 text-gray-800">No Posts Yet</h2>
-                        <p className="text-gray-600 mb-6">
-                            Connect with others to start seeing posts in your feed!
-                        </p>
+            {/* Main Content - Adjusted for mobile and desktop */}
+            <div className="w-full lg:ml-80 flex-1 p-4 lg:p-6">
+                <div className="max-w-2xl mx-auto">
+                    {/* Post Creation */}
+                    <div className="mb-6 bg-white dark:bg-card-dark rounded-xl border border-[#E9DFCE] dark:border-border-dark">
+                        <PostCreation user={authUser} />
                     </div>
-                )}
-            </div>
 
-            {/* Recommended Users */}
-            {recommendedUsers?.length > 0 && (
-                
-                <div className="col-span-1 lg:col-span-1 hidden lg:block">
-                    <div className="bg-secondary rounded-lg shadow p-4">
-                        <h2 className="font-semibold mb-4">People you may know</h2>
-                        {recommendedUsers.map((user, index) => (
-                            
-                            <RecommendedUser key={user._id || index} user={user} />
+                    {/* Posts Feed */}
+                    <div className="space-y-4">
+                        {posts?.map(post => (
+                            <div key={post._id} className="bg-white dark:bg-card-dark rounded-xl border border-[#E9DFCE] dark:border-border-dark">
+                                <Post post={post} />
+                            </div>
                         ))}
-                    </div>
-                </div>
-            )}
 
-            {/* Loading state for recommendations */}
-            {isLoading && (
-                <div className="col-span-1 lg:col-span-1 hidden lg:block">
-                    <div className="bg-secondary rounded-lg shadow p-4">
-                        <p>Loading recommendations...</p>
+                        {posts?.length === 0 && (
+                            <div className="bg-white dark:bg-card-dark rounded-xl p-6 lg:p-8 text-center border border-[#F4EFE6] dark:border-border-dark">
+                                <Users className="mx-auto text-[#019863] dark:text-primary-dark mb-4" size={48} />
+                                <h2 className="text-xl lg:text-2xl font-bold text-[#1C160C] dark:text-text-dark mb-2">No Posts Yet</h2>
+                                <p className="text-[#A18249] dark:text-text-dark-muted">Connect with others to start seeing posts!</p>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
-
-            {/* Error state for recommendations */}
-            {isError && (
-                <div className="col-span-1 lg:col-span-1 hidden lg:block">
-                    <div className="bg-secondary rounded-lg shadow p-4">
-                        <p className="text-red-500">Failed to load recommendations.</p>
-                    </div>
-                </div>
-            )}
+            </div>
         </div>
     );
 };

@@ -1,61 +1,129 @@
 import React from "react";
+import { useTheme } from "../../context/ThemeContext";
 
-const JobFilter = ({ filters, setFilters }) => {
-  const handleChange = (e) => {
-    setFilters({
-      ...filters,
-      [e.target.name]: e.target.value,
+const JobFilter = ({ filters, setFilters, isDarkMode }) => {
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => {
+      const newFilters = { ...prev };
+      if (value === "") {
+        delete newFilters[name];
+      } else {
+        newFilters[name] = value;
+      }
+      return newFilters;
     });
   };
 
+  const clearFilters = () => {
+    setFilters({});
+  };
+
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6 w-full lg:w-80">
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Filters</h3>
-      
-      {/* Location Filter */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+    <div className="space-y-6">
+      <div>
+        <label className={`block mb-2 font-medium ${
+          isDarkMode ? 'text-text-dark' : 'text-text'
+        }`}>
+          Job Type
+        </label>
+        <select
+          name="jobType"
+          value={filters.jobType || ""}
+          onChange={handleFilterChange}
+          className={`w-full p-3 rounded-lg border ${
+            isDarkMode 
+              ? 'bg-background-dark border-border-dark text-text-dark' 
+              : 'bg-white border-border text-text'
+          } focus:outline-none focus:ring-2 focus:ring-primary`}
+        >
+          <option value="">All Types</option>
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contract">Contract</option>
+          <option value="Internship">Internship</option>
+        </select>
+      </div>
+
+      <div>
+        <label className={`block mb-2 font-medium ${
+          isDarkMode ? 'text-text-dark' : 'text-text'
+        }`}>
+          Experience Level
+        </label>
+        <select
+          name="experienceLevel"
+          value={filters.experienceLevel || ""}
+          onChange={handleFilterChange}
+          className={`w-full p-3 rounded-lg border ${
+            isDarkMode 
+              ? 'bg-background-dark border-border-dark text-text-dark' 
+              : 'bg-white border-border text-text'
+          } focus:outline-none focus:ring-2 focus:ring-primary`}
+        >
+          <option value="">All Levels</option>
+          <option value="Entry">Entry</option>
+          <option value="Mid">Mid</option>
+          <option value="Senior">Senior</option>
+        </select>
+      </div>
+
+      <div>
+        <label className={`block mb-2 font-medium ${
+          isDarkMode ? 'text-text-dark' : 'text-text'
+        }`}>
           Location
         </label>
         <input
           type="text"
           name="location"
           placeholder="Enter location"
-          className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          onChange={handleChange}
+          value={filters.location || ""}
+          onChange={handleFilterChange}
+          className={`w-full p-3 rounded-lg border ${
+            isDarkMode 
+              ? 'bg-background-dark border-border-dark text-text-dark placeholder-text-dark-muted' 
+              : 'bg-white border-border text-text placeholder-text-muted'
+          } focus:outline-none focus:ring-2 focus:ring-primary`}
         />
       </div>
 
-      {/* Job Type Filter */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Job Type
+      {/* Salary Range Filter - Commented out for now
+      <div>
+        <label className={`block mb-2 font-medium ${
+          isDarkMode ? 'text-text-dark' : 'text-text'
+        }`}>
+          Salary Range
         </label>
         <select
-          name="jobType"
-          className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          onChange={handleChange}
+          name="salaryRange"
+          value={filters.salaryRange || ""}
+          onChange={handleFilterChange}
+          className={`w-full p-3 rounded-lg border ${
+            isDarkMode 
+              ? 'bg-background-dark border-border-dark text-text-dark' 
+              : 'bg-white border-border text-text'
+          } focus:outline-none focus:ring-2 focus:ring-primary`}
         >
-          <option value="">All</option>
-          <option value="Full-time">Full-Time</option>
-          <option value="Part-time">Part-Time</option>
-          <option value="Internship">Internship</option>
+          <option value="">All Ranges</option>
+          <option value="0-30000">$0 - $30,000</option>
+          <option value="30000-60000">$30,000 - $60,000</option>
+          <option value="60000-90000">$60,000 - $90,000</option>
+          <option value="90000+">$90,000+</option>
         </select>
       </div>
+      */}
 
-      {/* Placeholder for Additional Filters */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Additional Filter (e.g., Salary Range)
-        </label>
-        <input
-          type="text"
-          name="additionalFilter"
-          placeholder="Optional"
-          className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          onChange={handleChange}
-        />
-      </div>
+      <button
+        onClick={clearFilters}
+        className={`w-full py-3 px-6 rounded-lg font-medium ${
+          isDarkMode
+            ? 'bg-secondary-dark text-white'
+            : 'bg-primary text-white'
+        }`}
+      >
+        Clear Filters
+      </button>
     </div>
   );
 };

@@ -61,8 +61,15 @@ export const acceptConnectionRequest = async (req, res) => {
 			return res.status(400).json({ message: "This request has already been processed" });
 		}
 
+		
+		// Update request status and save with current timestamp
 		request.status = "accepted";
-		await request.save();
+		const savedRequest = await request.save();
+
+		console.log("\n=== After Accepting Request ===");
+		console.log("New status:", savedRequest.status);
+		console.log("New updatedAt:", savedRequest.updatedAt);
+		console.log("New createdAt:", savedRequest.createdAt);
 
 		// if im your friend then ur also my friend ;)
 		await User.findByIdAndUpdate(request.sender._id, { $addToSet: { connections: userId } });
@@ -138,13 +145,85 @@ export const getConnectionRequests = async (req, res) => {
 export const getUserConnections = async (req, res) => {
 	try {
 		const userId = req.user._id;
+		const { query } = req.query;
 
-		const user = await User.findById(userId).populate(
-			"connections",
-			"name username profilePicture headline connections"
-		);
+		// First get the user's connections with timestamps
+		const user = await User.findById(userId).populate({
+			path: "connections",
+			select: "name username profilePicture headline connections updatedAt",
+			options: { sort: { updatedAt: -1 } }
+		});
 
-		res.json(user.connections);
+		// Get accepted connection requests with timestamps
+		const connectionRequests = await ConnectionRequest.find({
+			status: "accepted",
+			$or: [
+				{ sender: userId },
+				{ recipient: userId }
+			]
+		}).select("sender recipient updatedAt");
+
+		console.log("\n=== Connection Requests ===");
+		connectionRequests.forEach(req => {
+			console.log(`Request: sender=${req.sender}, recipient=${req.recipient}`);
+			console.log(`- Updated at: ${new Date(req.updatedAt).toISOString()}`);
+		});
+
+		// Map connection requests to connections with proper timestamps
+		let connections = user.connections.map(conn => {
+			const request = connectionRequests.find(req => 
+				(req.sender.toString() === userId && req.recipient.toString() === conn._id.toString()) ||
+				(req.recipient.toString() === userId && req.sender.toString() === conn._id.toString())
+			);
+
+			console.log(`\nMapping connection ${conn.name}:`);
+			console.log(`- Connection ID: ${conn._id}`);
+			console.log(`- Found request: ${request ? 'yes' : 'no'}`);
+			if (request) {
+				console.log(`- Request updated at: ${new Date(request.updatedAt).toISOString()}`);
+			}
+			console.log(`- Connection updated at: ${new Date(conn.updatedAt).toISOString()}`);
+
+			// Always use the request's updatedAt time as it reflects when the connection was accepted
+			const connectionTime = request ? request.updatedAt : conn.updatedAt;
+
+			return {
+				...conn.toObject(),
+				connectedAt: connectionTime
+			};
+		});
+
+		// If search query exists, filter connections
+		if (query && query.trim()) {
+			const searchTerms = query.toLowerCase().trim().split(/\s+/);
+			connections = connections.filter(connection => {
+				const name = (connection.name || '').toLowerCase();
+				const username = (connection.username || '').toLowerCase();
+				const headline = (connection.headline || '').toLowerCase();
+				
+				return searchTerms.every(term => {
+					const nameMatch = name.split(/\s+/).some(word => word.startsWith(term));
+					const usernameMatch = username.split(/\s+/).some(word => word.startsWith(term));
+					const headlineMatch = headline.split(/\s+/).some(word => word.startsWith(term));
+					return nameMatch || usernameMatch || headlineMatch;
+				});
+			});
+		}
+
+		// Sort connections by the actual connection timestamp (most recent first)
+		connections.sort((a, b) => {
+			const dateA = new Date(a.connectedAt).getTime();
+			const dateB = new Date(b.connectedAt).getTime();
+			return dateB - dateA;
+		});
+
+		console.log("\n=== Final Sorted Order ===");
+		connections.forEach(conn => {
+			console.log(`${conn.name}:`);
+			console.log(`- Connected at: ${new Date(conn.connectedAt).toISOString()}`);
+		});
+
+		res.json(connections);
 	} catch (error) {
 		console.error("Error in getUserConnections controller:", error);
 		res.status(500).json({ message: "Server error" });

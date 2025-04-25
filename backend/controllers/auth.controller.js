@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendWelcomeEmail } from "../emails/emailHandlers.js";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../emails/emailHandlers.js";
 
 
 export const signup = async (req, res) => {
@@ -110,4 +110,70 @@ export const getCurrentUser = async (req, res) => {
 	   res.status(500).json({ message: "Server error" });
 	}
  };
+
+export const forgotPassword = async (req, res) => {
+	try {
+		const { email } = req.body;
+
+		if (!email) {
+			return res.status(400).json({ message: "Email is required" });
+		}
+
+		const user = await User.findOne({ email });
+		if (!user) {
+			// For security reasons, we don't reveal if the email exists
+			return res.status(200).json({ message: "If an account exists with this email, you will receive a password reset link" });
+		}
+
+		// Generate reset token
+		const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+		
+		// Create reset URL
+		const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+		// Send reset email
+		await sendPasswordResetEmail(user.email, user.name, resetUrl);
+
+		res.status(200).json({ message: "If an account exists with this email, you will receive a password reset link" });
+	} catch (error) {
+		console.error("Error in forgotPassword:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
+export const resetPassword = async (req, res) => {
+	try {
+		const { token, newPassword } = req.body;
+
+		if (!token || !newPassword) {
+			return res.status(400).json({ message: "Token and new password are required" });
+		}
+
+		// Verify token
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		const userId = decoded.userId;
+
+		// Find user
+		const user = await User.findById(userId);
+		if (!user) {
+			return res.status(400).json({ message: "Invalid or expired token" });
+		}
+
+		// Hash new password
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+		// Update password
+		user.password = hashedPassword;
+		await user.save();
+
+		res.status(200).json({ message: "Password reset successfully" });
+	} catch (error) {
+		if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+			return res.status(400).json({ message: "Invalid or expired token" });
+		}
+		console.error("Error in resetPassword:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
  

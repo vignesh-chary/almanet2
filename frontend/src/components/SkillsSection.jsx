@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 
-const SkillsSection = ({ userData, isOwnProfile, onSave }) => {
+const SkillsSection = ({ userData, isOwnProfile, onSave, isDarkMode }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [skills, setSkills] = useState(userData.skills || []);
 	const [newSkill, setNewSkill] = useState("");
@@ -23,17 +23,17 @@ const SkillsSection = ({ userData, isOwnProfile, onSave }) => {
 	};
 
 	return (
-		<div className='bg-white shadow rounded-lg p-6'>
-			<h2 className='text-xl font-semibold mb-4'>Skills</h2>
-			<div className='flex flex-wrap'>
+		<div className={`${isDarkMode ? 'bg-background-dark' : 'bg-white'} shadow rounded-lg p-6`}>
+			<h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-text-dark' : 'text-text'}`}>Skills</h2>
+			<div className='flex flex-wrap gap-2'>
 				{skills.map((skill, index) => (
 					<span
 						key={index}
-						className='bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm mr-2 mb-2 flex items-center'
+						className={`${isDarkMode ? 'bg-secondary-dark text-text-dark' : 'bg-secondary text-text'} px-3 py-1 rounded-full text-sm flex items-center`}
 					>
 						{skill}
 						{isEditing && (
-							<button onClick={() => handleDeleteSkill(skill)} className='ml-2 text-red-500'>
+							<button onClick={() => handleDeleteSkill(skill)} className={`ml-2 ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>
 								<X size={14} />
 							</button>
 						)}
@@ -48,7 +48,7 @@ const SkillsSection = ({ userData, isOwnProfile, onSave }) => {
 						placeholder='New Skill'
 						value={newSkill}
 						onChange={(e) => setNewSkill(e.target.value)}
-						className='flex-grow p-2 border rounded-l'
+						className={`flex-grow p-2 border rounded-l ${isDarkMode ? 'bg-background-dark text-text-dark border-border-dark' : 'bg-white text-text border-border'}`}
 					/>
 					<button
 						onClick={handleAddSkill}
@@ -71,7 +71,7 @@ const SkillsSection = ({ userData, isOwnProfile, onSave }) => {
 					) : (
 						<button
 							onClick={() => setIsEditing(true)}
-							className='mt-4 text-primary hover:text-primary-dark transition duration-300'
+							className={`mt-4 ${isDarkMode ? 'text-primary-dark' : 'text-primary'} hover:text-primary-dark transition duration-300`}
 						>
 							Edit Skills
 						</button>

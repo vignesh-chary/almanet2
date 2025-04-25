@@ -1,23 +1,27 @@
 import { Link } from "react-router-dom";
 
-function UserCard({ user, isConnection }) {
-	return (
-		<div className='bg-white rounded-lg shadow p-4 flex flex-col items-center transition-all hover:shadow-md'>
-			<Link to={`/profile/${user.username}`} className='flex flex-col items-center'>
-				<img
-					src={user.profilePicture || "/avatar.png"}
-					alt={user.name}
-					className='w-24 h-24 rounded-full object-cover mb-4'
-				/>
-				<h3 className='font-semibold text-lg text-center'>{user.name}</h3>
-			</Link>
-			<p className='text-gray-600 text-center'>{user.headline}</p>
-			<p className='text-sm text-gray-500 mt-2'>{user.connections?.length} connections</p>
-			<button className='mt-4 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors w-full'>
-				{isConnection ? "Connected" : "Connect"}
-			</button>
-		</div>
-	);
-}
+const UserCard = ({ user }) => {
+    return (
+        <div className="flex min-w-[960px] max-w-[960px] items-center bg-background dark:bg-background-dark px-4 py-2 transition-colors duration-300">
+            <div className="flex items-center gap-4">
+                <Link to={`/profile/${user.username}`} className="flex items-center gap-4">
+                    <img
+                        src={user.profilePicture || "/default-avatar.png"}
+                        alt={user.name}
+                        className="h-12 w-12 rounded-full object-cover"
+                    />
+                    <div className="flex flex-col">
+                        <p className="text-text dark:text-text-dark text-base font-medium leading-normal transition-colors duration-300">
+                            {user.name}
+                        </p>
+                        <p className="text-text-muted dark:text-text-dark-muted text-sm font-normal leading-normal transition-colors duration-300">
+                            {user.headline || "No headline"}
+                        </p>
+                    </div>
+                </Link>
+            </div>
+        </div>
+    );
+};
 
 export default UserCard;

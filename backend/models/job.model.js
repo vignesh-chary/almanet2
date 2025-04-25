@@ -7,7 +7,7 @@ const jobSchema = new mongoose.Schema(
     location: { type: String, required: true },
     jobType: {
       type: String,
-      enum: ["Full-time", "Part-time", "Internship"],
+      enum: ["Full-Time", "Full-time", "Part-Time", "Part-time", "Contract", "Internship"],
       required: true,
     },
     experienceLevel: {
@@ -16,6 +16,7 @@ const jobSchema = new mongoose.Schema(
       required: true,
     },
     position: { type: String, required: true },
+    salary: { type: Number, required: true },
     postedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -31,7 +32,7 @@ const jobSchema = new mongoose.Schema(
           type: String,
           enum: ["Pending", "Accepted", "Rejected"],
           default: "Pending",
-        }, // Added status field
+        },
       },
     ],
     requirements: [{ type: String }],

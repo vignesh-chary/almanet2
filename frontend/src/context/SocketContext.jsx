@@ -1,46 +1,56 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { io } from "socket.io-client";
-import { useQuery } from "@tanstack/react-query";
-import {axiosInstance} from "../lib/axios";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
+import io from "socket.io-client";
 
-const SocketContext = createContext();
+const SocketContext = createContext(null);
+
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  return context;
+};
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-
-  // Fetch authenticated user
-  const { data: user, isSuccess } = useQuery({
-    queryKey: ["authUser"],
-    queryFn: async () => {
-      const { data } = await axiosInstance.get("/auth/me");
-      return data;
-    },
-  });
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    if (!isSuccess || !user?._id) return; // Ensure user data is available
+    if (socketRef.current) return;
 
-    const newSocket = io(import.meta.env.VITE_API_URL, {
-      query: { userId: user._id },
+    const socketInstance = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
+      withCredentials: true,
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
-    setSocket(newSocket);
-
-    newSocket.on("getOnlineUsers", (users) => {
-      setOnlineUsers(users);
+    socketInstance.on("connect", () => {
+      console.log("Socket connected");
     });
 
-    return () => newSocket.disconnect();
-  }, [isSuccess, user]);
+    socketInstance.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+
+    socketInstance.on("error", (error) => {
+      console.error("Socket error:", error);
+    });
+
+    socketRef.current = socketInstance;
+    setSocket(socketInstance);
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, onlineUsers }}>
+    <SocketContext.Provider value={socket}>
       {children}
     </SocketContext.Provider>
   );
 };
 
-export const useSocket = () => {
-  return useContext(SocketContext); // Removed error-throwing logic
-};
+export default SocketContext;
